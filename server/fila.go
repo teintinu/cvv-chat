@@ -28,6 +28,7 @@ type FilaCache struct {
 func qryFila(contexto appengine.Context, nome string) (fila *FilaCache, err error) {
 
 	var chave_cache = FilaEntity+nome
+	var ancestor=datastore.NewKey(contexto, FilaEntity, nome, 0, nil)
 	fmt.Printf("\nqryFila %v", chave_cache)
 
 	var cache FilaCache
@@ -40,6 +41,7 @@ func qryFila(contexto appengine.Context, nome string) (fila *FilaCache, err erro
 
 	var query = datastore.
 		NewQuery(FilaEntity+nome).
+		Ancestor(ancestor).
 		Order("-TS").
 		Limit(1)
 		
@@ -52,7 +54,7 @@ func qryFila(contexto appengine.Context, nome string) (fila *FilaCache, err erro
 			TS: time.Now(),
 			tokens: []string{},
 		}
-		cache.key=datastore.NewKey(contexto, chave_cache, "", data.TS.Unix(), nil)
+		cache.key=datastore.NewKey(contexto, FilaEntity, "", data.TS.Unix(), ancestor)
 		_, err = datastore.Put(contexto, cache.key, &data)
 		if err != nil {
 			return nil, err
@@ -67,29 +69,33 @@ func qryFila(contexto appengine.Context, nome string) (fila *FilaCache, err erro
 		Key:    chave_cache,
 		Object: cache,
 	}
-  fmt.Printf("\nqryFila set cache %v + %v", item.Key, *item.Object)
+  fmt.Printf("\nqryFila set cache %v + %v", item.Key, item.Object)
 	memcache.Gob.Set(contexto, item)
 	return
 }
 
 func updFila(contexto appengine.Context, nome string, upd_fn func(fila *Fila) (updated bool, err error)) (updated bool, filaUpd *Fila, err error) {
 	var chave_cache = FilaEntity+nome
+	var ancestor=datastore.NewKey(contexto, FilaEntity, nome, 0, nil)
 	fmt.Printf("\nupdFila %v", chave_cache)
 	updated=false
   var rm_keys []*datastore.Key
-	var cache *FilaCache; 
+	var cache FilaCache; 
 	
 	err=datastore.RunInTransaction(contexto, func (contexto appengine.Context) error {
+		fmt.Printf("\nupdFila -query")
 		var query = datastore.
-				NewQuery(FilaEntity+nome).
+				NewQuery(FilaEntity).
+		    Ancestor(ancestor).
 				Order("-TS").
 				Limit(10)
 				
 			var cursor = query.Run(contexto)
-
+fmt.Printf("\nupdFila -cursor")
 			var data Fila
 			cache.key, err = cursor.Next(&data)
 			if err == datastore.Done {
+				fmt.Printf("\nupdFila - not found")
 				data = Fila{
 					TS: time.Now(),
 					tokens: []string{},
@@ -100,31 +106,35 @@ func updFila(contexto appengine.Context, nome string, upd_fn func(fila *Fila) (u
 			} else if err != nil {
 				return err
 			}   
+				fmt.Printf("\nupdFila - upd_fn")
 			updated, err = upd_fn(&data);
 			if err != nil {
+				fmt.Printf("\nupdFila - upd_fn - err")
 				return err
 			}   
 			if (updated) {
-  		cache.data.TS = time.Now()
-				cache.key=datastore.NewKey(contexto, chave_cache, "", data.TS.Unix(), nil)
-  			fmt.Printf("\ngravando %v", data)
+				fmt.Printf("\nupdFila - upd_fn - update %v", data)
+  		data.TS = time.Now()
+				fmt.Printf("\nupdFila - upd_fn - update %v", data)
+				cache.key=datastore.NewKey(contexto, FilaEntity, "", data.TS.Unix(), ancestor)
+				cache.data=&data
+  			fmt.Printf("\ngravando %v", cache)
 			  _, err = datastore.Put(contexto, cache.key, &data)
+				var item = &memcache.Item{
+					Key:    chave_cache,
+					Object: cache,
+				}
+				fmt.Printf("\nupdFila set cache %v + %v", item.Key, item.Object)
+				memcache.Gob.Set(contexto, item)
 			}
-		var item = &memcache.Item{
-			Key:    chave_cache,
-			Object: *cache,
-		}
-		fmt.Printf("\nupdFila set cache %v + %v", item.Key, *item.Object)
-		memcache.Gob.Set(contexto, item)
 
 
-var rm_key *datastore.Key
-	 rm_key, err = cursor.Next(&data)
-	 for err != datastore.Done {
-		 rm_keys=append(rm_keys, rm_key)
-	   rm_key, err = cursor.Next(&data)
-	 }
-		return err
+			var rm_key, rm_err = cursor.Next(&data)
+			for rm_err != datastore.Done {
+				rm_keys=append(rm_keys, rm_key)
+				rm_key, rm_err = cursor.Next(&data)
+			}
+  		return err
 	}, nil)	
 
 	if len(rm_keys)>0 {

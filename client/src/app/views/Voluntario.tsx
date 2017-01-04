@@ -100,13 +100,13 @@ export class VoluntarioDisponibilidade extends React.Component<{}, {}> {
         { state.server_state.disponibilidade.enable?
         <div>
           Canais <br /><br />
-          { state.server_state.disponibilidade.can_voz?
+          { state.server_state.disponibilidade.can_audio?
           <Toggle
-            label="Atender por voz" style={styles.toggle}
-            checked={state.server_state.disponibilidade.enable && state.canal.voz}
-            disabled={!(state.server_state.disponibilidade.can_voz && state.server_state.disponibilidade.enable)}
+            label="Atender por audio" style={styles.toggle}
+            checked={state.server_state.disponibilidade.enable && state.canal.audio}
+            disabled={!(state.server_state.disponibilidade.can_audio && state.server_state.disponibilidade.enable)}
             labelPosition="right"
-            onToggle={(e, checked)=>{state.canal.voz = checked}}
+            onToggle={(e, checked)=>{state.canal.audio = checked}}
           />
             : null
           }
@@ -124,7 +124,7 @@ export class VoluntarioDisponibilidade extends React.Component<{}, {}> {
           <Toggle
             label="Atender por vídeo" style={styles.toggle}
             checked={state.server_state.disponibilidade.enable && state.canal.video}
-            disabled={!(state.server_state.disponibilidade.can_voz && state.server_state.disponibilidade.enable)}
+            disabled={!(state.server_state.disponibilidade.can_audio && state.server_state.disponibilidade.enable)}
             labelPosition="right"
             onToggle={(e, checked)=>{state.canal.video = checked}}
           />
@@ -149,7 +149,7 @@ function Status() {
     <tbody>
       <tr>
         <th></th>
-        <th>Voz</th>
+        <th>Audio</th>
         <th>Chat</th>
         <th>Video</th>
       </tr>
@@ -158,13 +158,13 @@ function Status() {
       </tr>
       <tr>
         <td>Em atendimento</td>
-        <td>{state.server_state.status.onVoz-state.server_state.status.idleVoz}</td>
+        <td>{state.server_state.status.onAudio-state.server_state.status.idleAudio}</td>
         <td>{state.server_state.status.onTexto-state.server_state.status.idleTexto}</td>
         <td>{state.server_state.status.onVideo-state.server_state.status.idleVideo}</td>
       </tr>
       <tr>
         <td>Tamanho da fila</td>
-        <td>{state.server_state.status.filaVoz}</td>
+        <td>{state.server_state.status.filaAudio}</td>
         <td>{state.server_state.status.filaTexto}</td>
         <td>{state.server_state.status.filaVideo}</td>
       </tr>
@@ -173,13 +173,13 @@ function Status() {
       </tr>
       <tr>
         <td>Voluntários logados</td>
-        <td>{state.server_state.status.onVoz}</td>
+        <td>{state.server_state.status.onAudio}</td>
         <td>{state.server_state.status.onTexto}</td>
         <td>{state.server_state.status.onVideo}</td>
       </tr>
       <tr>
         <td>Voluntários disponíveis</td>
-        <td>{state.server_state.status.idleVoz}</td>
+        <td>{state.server_state.status.idleAudio}</td>
         <td>{state.server_state.status.idleTexto}</td>
         <td>{state.server_state.status.idleVideo}</td>
       </tr>

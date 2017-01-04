@@ -1,6 +1,6 @@
 /**
  * CVV
- * #### permite que o voluntário atenda chamadas da OP As chamadas podem ser de chat, voz e vídeo. 
+ * #### permite que o voluntário atenda chamadas da OP As chamadas podem ser de chat, audio e vídeo. 
  *
  * OpenAPI spec version: 1.0.0
  * Contact: fernando@hoda5.com
@@ -24,12 +24,12 @@
 
 const BASE_PATH = "http://cvv.hoda5.com/api".replace(/\/+$/, '');
 
-export type Canal = "texto" | "voz" | "video";
+export type Canal = "texto" | "audio" | "video";
 
 export interface Atendimento {
     tokenOP: string
     fila_texto: number
-    fila_voz: number
+    fila_audio: number
     fila_video: number
     connection?: {
         idVoluntario: string
@@ -43,7 +43,7 @@ export interface Disponibilidade {
     nome: string,
     token: string,
     can_texto: boolean
-    can_voz: boolean
+    can_audio: boolean
     can_video: boolean
     enable: boolean
     logado(): boolean
@@ -59,9 +59,9 @@ export interface Status {
      */
     "onTexto"?: number;
     /**
-     * quantidade de voluntários conectados na fila de voz
+     * quantidade de voluntários conectados na fila de audio
      */
-    "onVoz"?: number;
+    "onAudio"?: number;
     /**
      * quantidade de voluntários conectados na fila de video
      */
@@ -75,9 +75,9 @@ export interface Status {
      */
     "idleTexto"?: number;
     /**
-     * quantidade de voluntários disponíveis na fila de voz
+     * quantidade de voluntários disponíveis na fila de audio
      */
-    "idleVoz"?: number;
+    "idleAudio"?: number;
     /**
      * quantidade de voluntários disponíveis na fila de video
      */
@@ -87,9 +87,9 @@ export interface Status {
      */
     "filaTexto": number;
     /**
-     * tamanho da fila de voz
+     * tamanho da fila de audio
      */
-    "filaVoz": number;
+    "filaAudio": number;
     /**
      * tamanho da fila de video
      */
@@ -102,20 +102,20 @@ export const rpc = {
             callback(null, {
                 on: 100,
                 onTexto: 30,
-                onVoz: 50,
+                onAudio: 50,
                 onVideo: 30,
                 idle: 40,
                 idleTexto: 20,
-                idleVoz: 30,
+                idleAudio: 30,
                 idleVideo: 25,
                 filaTexto: 20,
-                filaVoz: 30,
+                filaAudio: 30,
                 filaVideo: 25
             },
                 {
                     tokenOP: Math.random().toString(),
                     fila_texto: 10,
-                    fila_voz: 1,
+                    fila_audio: 1,
                     fila_video: 2,
                     connection: Math.random() > 0.9 ?
                         {
@@ -135,11 +135,11 @@ export const rpc = {
                 nome: login,
                 token: '123',
                 can_texto: true,
-                can_voz: true,
+                can_audio: true,
                 can_video: true,
                 enable: true,
                 logado() {
-                    return r.id && (r.can_texto || r.can_voz || r.can_video);
+                    return r.id && (r.can_texto || r.can_audio || r.can_video);
                 }
             };
             callback(null, r);
@@ -192,10 +192,10 @@ export const rpc = {
 //     /** 
 //      * @param voluntarioId identificação do voluntário
 //      * @param chat O voluntário poderá atender por chat
-//      * @param voz O voluntário poderá atender por voz
+//      * @param audio O voluntário poderá atender por audio
 //      * @param video O voluntário poderá atender por video
 //      */
-//     voluntarioConectarPost(params: {  voluntarioId?: string; chat?: boolean; voz?: boolean; video?: boolean; }): FetchArgs {
+//     voluntarioConectarPost(params: {  voluntarioId?: string; chat?: boolean; audio?: boolean; video?: boolean; }): FetchArgs {
 //         const baseUrl = `/voluntario/conectar`;
 //         let urlObj = url.parse(baseUrl, true);
 //         let fetchOptions: RequestInit = { method: "POST" };
@@ -205,7 +205,7 @@ export const rpc = {
 //         fetchOptions.body = querystring.stringify({ 
 //             "voluntarioId": params.voluntarioId,
 //             "chat": params.chat,
-//             "voz": params.voz,
+//             "audio": params.audio,
 //             "video": params.video,
 //         });
 //         if (contentTypeHeader) {
@@ -320,10 +320,10 @@ export const rpc = {
 //     /** 
 //      * @param voluntarioId identificação do voluntário
 //      * @param chat O voluntário poderá atender por chat
-//      * @param voz O voluntário poderá atender por voz
+//      * @param audio O voluntário poderá atender por audio
 //      * @param video O voluntário poderá atender por video
 //      */
-//     voluntarioConectarPost(params: { voluntarioId?: string; chat?: boolean; voz?: boolean; video?: boolean;  }): (fetch: FetchAPI, basePath?: string) => Promise<any> {
+//     voluntarioConectarPost(params: { voluntarioId?: string; chat?: boolean; audio?: boolean; video?: boolean;  }): (fetch: FetchAPI, basePath?: string) => Promise<any> {
 //         const fetchArgs = DefaultApiFetchParamCreactor.voluntarioConectarPost(params);
 //         return (fetch: FetchAPI = isomorphicFetch, basePath: string = BASE_PATH) => {
 //             return fetch(basePath + fetchArgs.url, fetchArgs.options).then((response) => {
@@ -400,10 +400,10 @@ export const rpc = {
 //     /** 
 //      * @param voluntarioId identificação do voluntário
 //      * @param chat O voluntário poderá atender por chat
-//      * @param voz O voluntário poderá atender por voz
+//      * @param audio O voluntário poderá atender por audio
 //      * @param video O voluntário poderá atender por video
 //      */
-//     voluntarioConectarPost(params: {  voluntarioId?: string; chat?: boolean; voz?: boolean; video?: boolean; }) {
+//     voluntarioConectarPost(params: {  voluntarioId?: string; chat?: boolean; audio?: boolean; video?: boolean; }) {
 //         return DefaultApiFp.voluntarioConectarPost(params)(this.fetch, this.basePath);
 //     }
 //     /** 
@@ -445,10 +445,10 @@ export const rpc = {
 //         /** 
 //          * @param voluntarioId identificação do voluntário
 //          * @param chat O voluntário poderá atender por chat
-//          * @param voz O voluntário poderá atender por voz
+//          * @param audio O voluntário poderá atender por audio
 //          * @param video O voluntário poderá atender por video
 //          */
-//         voluntarioConectarPost(params: {  voluntarioId?: string; chat?: boolean; voz?: boolean; video?: boolean; }) {
+//         voluntarioConectarPost(params: {  voluntarioId?: string; chat?: boolean; audio?: boolean; video?: boolean; }) {
 //             return DefaultApiFp.voluntarioConectarPost(params)(fetch, basePath);
 //         },
 //         /** 

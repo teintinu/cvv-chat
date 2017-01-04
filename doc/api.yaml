@@ -4,7 +4,7 @@ info:
   title: CVV
   description: |
     #### Permite que o voluntário atenda chamadas da OP
-    As chamadas podem ser de chat, voz e vídeo.
+    As chamadas podem ser de chat, audio e vídeo.
   contact:
     name: Jose Fernando Toletino
     email: fernando@hoda5.com
@@ -34,26 +34,26 @@ paths:
         200:
           description: O voluntário foi colocado na fila de atendimento
       parameters:
-        - name: voluntarioId
+        - name: i
           in: formData
           description: identificação do voluntário
           type: string
-        - name: chat
+        - name: t
           in: formData
           description: O voluntário poderá atender por chat
           type: boolean
-        - name: voz
+        - name: a
           in: formData
-          description: O voluntário poderá atender por voz
+          description: O voluntário poderá atender por audio
           type: boolean
-        - name: video
+        - name: v
           in: formData
           description: O voluntário poderá atender por video
           type: boolean
-  /voluntario/pausar/{voluntarioId}:
+  /voluntario/pausar:
     parameters:
       - name: voluntarioId
-        in: path
+        in: query
         description: identificação do voluntário
         type: string
         required: true
@@ -61,10 +61,10 @@ paths:
       responses:
         200:
           description: O voluntário foi retirado da fila de atendimento
-  /voluntario/despausar/{voluntarioId}:
+  /voluntario/despausar:
     parameters:
       - name: voluntarioId
-        in: path
+        in: query
         description: identificação do voluntário
         type: string
         required: true
@@ -72,10 +72,10 @@ paths:
       responses:
         200:
           description: O voluntário foi retirado da fila de atendimento
-  /voluntario/sair/{voluntarioId}:
+  /voluntario/sair:
     parameters:
       - name: voluntarioId
-        in: path
+        in: query
         description: identificação do voluntário
         type: string
         required: true
@@ -84,10 +84,10 @@ paths:
         200:
           description: O voluntário foi retirado da fila de atendimento
           
-  /chamar/{canais}:
+  /chamar:
     parameters:
       - name: canais
-        in: path
+        in: query
         description: canais desejados
         type: array
         items:
@@ -111,10 +111,10 @@ definitions:
         type: integer
         format: integer
         description: quantidade de voluntários conectados na fila de chat
-      on_voz:
+      on_audio:
         type: integer
         format: integer
-        description: quantidade de voluntários conectados na fila de voz
+        description: quantidade de voluntários conectados na fila de audio
       on_video:
         type: integer
         format: integer
@@ -127,10 +127,10 @@ definitions:
         type: integer
         format: integer
         description: quantidade de voluntários disponíveis na fila de chat
-      idle_voz:
+      idle_audio:
         type: integer
         format: integer
-        description: quantidade de voluntários disponíveis na fila de voz
+        description: quantidade de voluntários disponíveis na fila de audio
       idle_video:
         type: integer
         format: integer
@@ -142,7 +142,7 @@ definitions:
         type: string
       fila_texto:
         type: integer
-      fila_voz:
+      fila_audio:
         type: integer
       fila_video:
         type: integer

@@ -9,4 +9,5 @@ func init() {
     http.Redirect(w, r, "/site/index.html", http.StatusMovedPermanently)
   });
 	http.HandleFunc("/api/ping", handlePing)
+	http.HandleFunc("/api/voluntario/conectar", handleVoluntarioConectar)
 }

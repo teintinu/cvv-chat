@@ -9,7 +9,7 @@ import (
 	// "strings"
 
 	"testing"
-	// "time"
+	"time"
 
 	"appengine"
 	"appengine/aetest"
@@ -24,26 +24,45 @@ func TestChatTexto(t *testing.T) {
 	}
 	defer inst.Close()
 
-	var contexto, errcontexto = aetest.NewContext(nil)
-	if errcontexto != nil {
-		t.Fatal(errcontexto)
+  var contexto appengine.Context;
+	var err error;
+	contexto, err = aetest.NewContext(nil)
+	if err != nil {
+		t.Fatal(err)
 		return
 	}
 
-  assertFila(t, contexto, "texto", []string{})
-  assertFila(t, contexto, "voz", []string{})
-  assertFila(t, contexto, "video", []string{})
+  assertQryFila(t, contexto, "texto", []string{})
+  assertQryFila(t, contexto, "audio", []string{})
+  assertQryFila(t, contexto, "video", []string{})
+
+	var fila1 *Fila
+	_, fila1, err = soaDisponibilizar(contexto, "tk-ana", "audio")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	time.Sleep(3000000000)
+  assertQryFila(t, contexto, "texto", []string{})
+  assertQryFila(t, contexto, "audio", []string{"tk-ana"})
+  assertQryFila(t, contexto, "audio", fila1.tokens)
+  assertQryFila(t, contexto, "video", []string{})
+	
 }	
 
-func assertFila(t *testing.T, contexto appengine.Context, nome string, esperado []string) {
+func assertQryFila(t *testing.T, contexto appengine.Context, nome string, esperado []string) {
 	var cache, err = qryFila(contexto, nome)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
+	assertFila(t, contexto, cache.data, esperado);
+}
+
+func assertFila(t *testing.T, contexto appengine.Context, data *Fila, esperado []string) {
 	var erro="";
-	for i := 0; i < len(cache.data.tokens); i++ {		
-		var atual=cache.data.tokens[i]
+	for i := 0; i < len(data.tokens); i++ {		
+		var atual=data.tokens[i]
 		if (i>=len(esperado)) {
 			erro=fmt.Sprintf("\n  tokens[%v] inesperado",i)
 			break;
@@ -53,36 +72,19 @@ func assertFila(t *testing.T, contexto appengine.Context, nome string, esperado 
 			}
 	}
 
-	if len(cache.data.tokens) < len(esperado) {
+	if len(data.tokens) < len(esperado) {
 		erro=fmt.Sprintf("\n  Era esperado mais itens")
 	}
 	if (erro!="") {
-		t.Fatalf("\nassertFila:%v \n  esperado=%v \n  atual=%v", erro, esperado, cache.data.tokens)
+		t.Fatalf("\nassertFila:%v \n  esperado=%v \n  atual=%v", erro, esperado, data.tokens)
 	}
 }
-
-// 	if len(cache.data.Voluntarios) != 0 {
-// 		t.Fatalf("nao deveria voluntarios logados")
-// 		return
-// 	}
-// 	if len(cache.data.OP) != 0 {
-// 		t.Fatalf("fila de atendimento deveria estar vazia")
-// 		return
-// 	}
-
-//   var updated bool
-// 	var fila1 *Fila
-// 	updated, fila1, err = soaDisponibilizar(contexto, "tk-ana", "voz")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 		return
-// 	}
 
 // 	if len(fila1.Voluntarios) != 1 {
 // 		t.Fatalf("somente voluntaria ana deveria estar logada Voluntarios=%v", fila1.Voluntarios)
 // 		return
 // 	}
-// 	if (fila1.Voluntarios[0].Token != "tk-ana") || fila1.Voluntarios[0].Pausado || fila1.Voluntarios[0].Texto || (!fila1.Voluntarios[0].Voz) || fila1.Voluntarios[0].Video {
+// 	if (fila1.Voluntarios[0].Token != "tk-ana") || fila1.Voluntarios[0].Pausado || fila1.Voluntarios[0].Texto || (!fila1.Voluntarios[0].Audio) || fila1.Voluntarios[0].Video {
 // 		t.Fatalf("erro na voluntaria logada %v ", fila1.Voluntarios[0])
 // 		return
 // 	}
@@ -102,7 +104,7 @@ func assertFila(t *testing.T, contexto appengine.Context, nome string, esperado 
 // 		t.Fatalf("somente voluntaria ana deveria estar logada Voluntarios=%v", fila2.Voluntarios)
 // 		return
 // 	}
-// 	if (fila2.Voluntarios[0].Token != "tk-ana") || fila2.Voluntarios[0].Pausado || (!fila2.Voluntarios[0].Texto) || (!fila2.Voluntarios[0].Voz) || fila2.Voluntarios[0].Video {
+// 	if (fila2.Voluntarios[0].Token != "tk-ana") || fila2.Voluntarios[0].Pausado || (!fila2.Voluntarios[0].Texto) || (!fila2.Voluntarios[0].Audio) || fila2.Voluntarios[0].Video {
 // 		t.Fatalf("erro na voluntaria logada %v ", fila2.Voluntarios[0])
 // 		return
 // 	}

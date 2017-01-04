@@ -38,14 +38,14 @@ var _server_state: {
     status: {
       on: 0,
       onTexto: 0,
-      onVoz: 0,
+      onAudio: 0,
       onVideo: 0,
       idle: 0,
       idleTexto: 0,
-      idleVoz: 0,
+      idleAudio: 0,
       idleVideo: 0,
       filaTexto: 0,
-      filaVoz: 0,
+      filaAudio: 0,
       filaVideo: 0
     },
     disponibilidade: {
@@ -54,7 +54,7 @@ var _server_state: {
       token: '',
       enable: false,
       can_texto: false,
-      can_voz: false,
+      can_audio: false,
       can_video: false,
       logado() {
         return false;
@@ -63,7 +63,7 @@ var _server_state: {
     atendimento: {
       tokenOP: '',
       fila_texto: 0,
-      fila_voz: 0,
+      fila_audio: 0,
       fila_video: 0,
     }
   };
@@ -168,7 +168,7 @@ class State {
     state.view = 'OP';
     state.carregando = true;
 
-    rpc.chamar(['voz'], (err, status, atendimento) => {
+    rpc.chamar(['audio'], (err, status, atendimento) => {
       state.server_state.status = status;
       state.server_state.atendimento = atendimento;
       state.carregando = false;
@@ -180,7 +180,7 @@ class Canal<T> {
   constructor(private _change: boolean,
     private _save: boolean,
     private _texto?: T,
-    private _voz?: T,
+    private _audio?: T,
     private _video?: T
   ) {
   }
@@ -194,11 +194,11 @@ class Canal<T> {
     if (this._save)
       saveConfig();
   }
-  get voz(): T {
-    return this._voz;
+  get audio(): T {
+    return this._audio;
   }
-  set voz(value: T) {
-    this._voz = value;
+  set audio(value: T) {
+    this._audio = value;
     if (this._change)
       dispatch("changed");
     if (this._save)
@@ -272,7 +272,7 @@ export function loadConfig() {
       var cfg = JSON.parse(s);
       _view = cfg.view || 'home';
       _canais.texto = cfg.canal.texto;
-      _canais.voz = cfg.canal.voz;
+      _canais.audio = cfg.canal.audio;
       _canais.video = cfg.canal.video;
       _server_state.disponibilidade.nome == cfg.voluntario
     }
@@ -288,7 +288,7 @@ export function saveConfig() {
     view: _view,
     canal: {
       texto: _canais.texto,
-      voz: _canais.voz,
+      audio: _canais.audio,
       video: _canais.video,
     },
     voluntario: _server_state.disponibilidade.nome

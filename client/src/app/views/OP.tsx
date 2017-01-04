@@ -36,11 +36,11 @@ export class OP extends React.Component<{}, {}> {
         <h1>Canais de atendimento<br/> do CVV</h1>
         <p style={{margin: "2em"}}>Escolha como você prefire ser atendido(a) pelo CVV</p>
         <Toggle
-          label="Aceito ser atendido(a) por voz"
+          label="Aceito ser atendido(a) por audio"
           style={styles.toggle}
-          checked={state.canal.voz}
+          checked={state.canal.audio}
           labelPosition="right"
-          onToggle={(e, checked)=>{state.canal.voz = checked}}
+          onToggle={(e, checked)=>{state.canal.audio = checked}}
         />
         <Toggle
           label="Aceito ser atendido(a) por chat"
@@ -75,8 +75,8 @@ export class OP extends React.Component<{}, {}> {
                 <CardText >
                   {state.server_state.status.on} voluntários(as) trabalhando
                   {
-                    state.canal.voz && state.server_state.atendimento.fila_voz > 0?
-                    <div>fila de voz: {state.server_state.atendimento.fila_voz}</div>:
+                    state.canal.audio && state.server_state.atendimento.fila_audio > 0?
+                    <div>fila de audio: {state.server_state.atendimento.fila_audio}</div>:
                     ""
                   }
                   {
