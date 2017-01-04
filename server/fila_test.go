@@ -9,11 +9,12 @@ import (
 	// "strings"
 
 	"testing"
-	"time"
+	// "time"
 
+	"appengine"
 	"appengine/aetest"
 	// "appengine/datastore"
-) 
+)
 
 func TestChatTexto(t *testing.T) {
 	var inst, errinst = aetest.NewInstance(nil)
@@ -29,44 +30,92 @@ func TestChatTexto(t *testing.T) {
 		return
 	}
 
-	var fila, err = qryFila(contexto)
+  assertFila(t, contexto, "texto", []string{})
+  assertFila(t, contexto, "voz", []string{})
+  assertFila(t, contexto, "video", []string{})
+}	
+
+func assertFila(t *testing.T, contexto appengine.Context, nome string, esperado []string) {
+	var cache, err = qryFila(contexto, nome)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
-
-	if (len(fila.data.Voluntarios) != 0) {
-	  t.Fatalf("nao deveria voluntarios logados")
-		return
-	}
-	if (len(fila.data.OP) != 0) {
-	  t.Fatalf("fila de atendimento deveria estar vazia")
-		return
-	}
-
-  fila, err = soaDisponibilizar(contexto, "tk-ana", "voz")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-  fmt.Printf("%v", fila.data)
-
-	if (len(fila.data.Voluntarios) != 1) {
-	  t.Fatalf("somente voluntaria ana deveria estar logada Voluntarios=%v", fila.data.Voluntarios)
-		return
-	}
-	if ((fila.data.Voluntarios[0].token != "tk-ana") || fila.data.Voluntarios[0].pausado || fila.data.Voluntarios[0].texto || (!fila.data.Voluntarios[0].voz) ||fila.data.Voluntarios[0].video ) {
-	  t.Fatalf("erro na voluntaria logada %v ", fila.data.Voluntarios[0])
-		return
-	}
-	if (len(fila.data.OP) != 0) {
-	  t.Fatalf("fila de atendimento deveria estar vazia")
-		return
+	var erro="";
+	for i := 0; i < len(cache.data.tokens); i++ {		
+		var atual=cache.data.tokens[i]
+		if (i>=len(esperado)) {
+			erro=fmt.Sprintf("\n  tokens[%v] inesperado",i)
+			break;
+		} 
+			if (atual != esperado[i]) {
+				erro=fmt.Sprintf("\n  tokens[%v]=%v esperado=%v",atual, esperado[i])
+			}
 	}
 
-
-	time.Sleep(300000000)
+	if len(cache.data.tokens) < len(esperado) {
+		erro=fmt.Sprintf("\n  Era esperado mais itens")
+	}
+	if (erro!="") {
+		t.Fatalf("\nassertFila:%v \n  esperado=%v \n  atual=%v", erro, esperado, cache.data.tokens)
+	}
 }
+
+// 	if len(cache.data.Voluntarios) != 0 {
+// 		t.Fatalf("nao deveria voluntarios logados")
+// 		return
+// 	}
+// 	if len(cache.data.OP) != 0 {
+// 		t.Fatalf("fila de atendimento deveria estar vazia")
+// 		return
+// 	}
+
+//   var updated bool
+// 	var fila1 *Fila
+// 	updated, fila1, err = soaDisponibilizar(contexto, "tk-ana", "voz")
+// 	if err != nil {
+// 		t.Fatal(err)
+// 		return
+// 	}
+
+// 	if len(fila1.Voluntarios) != 1 {
+// 		t.Fatalf("somente voluntaria ana deveria estar logada Voluntarios=%v", fila1.Voluntarios)
+// 		return
+// 	}
+// 	if (fila1.Voluntarios[0].Token != "tk-ana") || fila1.Voluntarios[0].Pausado || fila1.Voluntarios[0].Texto || (!fila1.Voluntarios[0].Voz) || fila1.Voluntarios[0].Video {
+// 		t.Fatalf("erro na voluntaria logada %v ", fila1.Voluntarios[0])
+// 		return
+// 	}
+// 	if len(fila1.OP) != 0 {
+// 		t.Fatalf("fila1 de atendimento deveria estar vazia")
+// 		return
+// 	}
+
+//   var fila2	 *Fila
+// 	updated, fila2, err = soaDisponibilizar(contexto, "tk-ana", "texto")
+// 	if err != nil {
+// 		t.Fatal(err)
+// 		return
+// 	}
+
+// 	if len(fila2.Voluntarios) != 1 {
+// 		t.Fatalf("somente voluntaria ana deveria estar logada Voluntarios=%v", fila2.Voluntarios)
+// 		return
+// 	}
+// 	if (fila2.Voluntarios[0].Token != "tk-ana") || fila2.Voluntarios[0].Pausado || (!fila2.Voluntarios[0].Texto) || (!fila2.Voluntarios[0].Voz) || fila2.Voluntarios[0].Video {
+// 		t.Fatalf("erro na voluntaria logada %v ", fila2.Voluntarios[0])
+// 		return
+// 	}
+// 	if len(fila2.OP) != 0 {
+// 		t.Fatalf("fila2 de atendimento deveria estar vazia")
+// 		return
+// 	}
+
+// 	time.Sleep(300000000)
+// 	fmt.Printf("\n%v", updated)
+// 	fmt.Printf("\n%v", fila2)
+// }
+
 // 	var lab1, errlab1 = qryLaboratorioPorCodigo(contexto, codigolab)
 // 	if errlab1 != nil {
 // 		t.Fatal(errlab1)

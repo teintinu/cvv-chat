@@ -14,6 +14,9 @@ handlers:
   script: _go_app
   secure: always
 
+# - url: /.*
+# 	/_ah/queue/go/delay
+
 builtins: 
 - default: on
 - remote_api: off
