@@ -1,0 +1,157 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: CVV
+  description: |
+    #### Permite que o voluntário atenda chamadas da OP
+    As chamadas podem ser de chat, voz e vídeo.
+  contact:
+    name: Jose Fernando Toletino
+    email: fernando@hoda5.com
+    url: https://hoda5.com
+  license:
+    name: MIT
+    url: http://opensource.org/licenses/MIT
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+host: cvv.hoda5.com
+basePath: /api
+paths:
+  /status:
+    post:
+      responses:
+        '200':
+          description: pet response
+          schema:
+            $ref: '#/definitions/status'
+  /voluntario/conectar:
+    post:
+      responses:
+        200:
+          description: O voluntário foi colocado na fila de atendimento
+      parameters:
+        - name: voluntarioId
+          in: formData
+          description: identificação do voluntário
+          type: string
+        - name: chat
+          in: formData
+          description: O voluntário poderá atender por chat
+          type: boolean
+        - name: voz
+          in: formData
+          description: O voluntário poderá atender por voz
+          type: boolean
+        - name: video
+          in: formData
+          description: O voluntário poderá atender por video
+          type: boolean
+  /voluntario/pausar/{voluntarioId}:
+    parameters:
+      - name: voluntarioId
+        in: path
+        description: identificação do voluntário
+        type: string
+        required: true
+    post:
+      responses:
+        200:
+          description: O voluntário foi retirado da fila de atendimento
+  /voluntario/despausar/{voluntarioId}:
+    parameters:
+      - name: voluntarioId
+        in: path
+        description: identificação do voluntário
+        type: string
+        required: true
+    post:
+      responses:
+        200:
+          description: O voluntário foi retirado da fila de atendimento
+  /voluntario/sair/{voluntarioId}:
+    parameters:
+      - name: voluntarioId
+        in: path
+        description: identificação do voluntário
+        type: string
+        required: true
+    post:
+      responses:
+        200:
+          description: O voluntário foi retirado da fila de atendimento
+          
+  /chamar/{canais}:
+    parameters:
+      - name: canais
+        in: path
+        description: canais desejados
+        type: array
+        items:
+          type: string
+        required: true
+    post:
+      responses:
+        200:
+          description: atendimento
+          schema:
+            $ref: '#/definitions/atendimento'
+definitions:
+  status:
+    type: object
+    properties:
+      on:
+        type: integer
+        format: integer
+        description: quantidade de voluntários conectados
+      on_texto:
+        type: integer
+        format: integer
+        description: quantidade de voluntários conectados na fila de chat
+      on_voz:
+        type: integer
+        format: integer
+        description: quantidade de voluntários conectados na fila de voz
+      on_video:
+        type: integer
+        format: integer
+        description: quantidade de voluntários conectados na fila de video
+      idle:
+        type: integer
+        format: integer
+        description: quantidade de voluntários disponíveis
+      idle_texto:
+        type: integer
+        format: integer
+        description: quantidade de voluntários disponíveis na fila de chat
+      idle_voz:
+        type: integer
+        format: integer
+        description: quantidade de voluntários disponíveis na fila de voz
+      idle_video:
+        type: integer
+        format: integer
+        description: quantidade de voluntários disponíveis na fila de video
+  atendimento:
+    type: object
+    properties:    
+      idOP:
+        type: string
+      fila_texto:
+        type: integer
+      fila_voz:
+        type: integer
+      fila_video:
+        type: integer
+      connection:
+        type: object        
+        properties:
+          idVoluntario:
+            type: string
+          canal:
+            type: string
+      status: 
+        $ref: '#/definitions/status'

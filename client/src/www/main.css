@@ -1,0 +1,17 @@
+html {
+  font-family: 'Roboto', sans-serif;
+}
+
+body {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+#app {  
+  max-width: 320px;
+  width: 320px;
+}
+
+.class {
+  animation: pulse
+}

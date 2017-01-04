@@ -1,0 +1,23 @@
+{
+  "name": "cvv_chat_tester",
+  "version": "0.16.4",
+  "scripts": {
+    "build": "tsc -p .",
+    "build:watch": "tsc -w -p ."
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/mocha": "^2.2.35",
+    "@types/node": "^6.0.55",
+    "@types/q": "0.0.32",
+    "@types/webdriverio": "^4.4.0",
+    "babel-runtime": "^6.20.0",
+    "mocha": "^3.2.0",
+    "q": "^1.4.1",
+    "typescript": "^2.1.4",
+    "wdio-mocha-framework": "^0.5.8",
+    "webdriverio": "^4.5.2",
+    "webdriverrtc": "^1.0.0"
+  },
+  "dependencies": {}
+}

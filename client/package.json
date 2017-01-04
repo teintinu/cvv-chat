@@ -1,0 +1,42 @@
+{
+  "name": "cvv-chat",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "webpack-dev-server --config webpack-dev-server.config.js --progress --inline --colors --display-error-details",
+    "build": "webpack --config webpack-production.config.js --progress --colors",
+    "build:test:debug": "tsc --outDir build/tests --module commonjs --moduleresolution node --lib dom,es2015,es2016 --sourceMap tests/loginAna.ts",
+    "test:debug": "node --debug --debug-brk build/tests/loginAna.ts"
+  },
+  "private": true,
+  "devDependencies": {
+    "@types/material-ui": "^0.16.46",
+    "@types/node": "^6.0.55",
+    "@types/react": "^0.14.55",
+    "@types/react-dom": "^0.14.20",
+    "@types/react-tap-event-plugin": "0.0.30",
+    "babel-core": "^6.18.2",
+    "babel-loader": "^6.2.8",
+    "babel-preset-es2015": "^6.18.0",
+    "babel-preset-es2016": "^6.16.0",
+    "babel-preset-react": "^6.16.0",
+    "babel-preset-stage-2": "^6.18.0",
+    "babel-runtime": "^6.20.0",
+    "browser-console-build-error-webpack-plugin": "0.0.1",
+    "html-webpack-plugin": "^2.24.1",
+    "transfer-webpack-plugin": "^0.1.4",
+    "ts-loader": "^1.3.3",
+    "typescript": "^2.1.4",
+    "webpack": "^1.13.3",
+    "webpack-dev-server": "^1.16.2",
+    "webpack-fail-plugin": "^1.0.5",
+    "webpack-notifier": "^1.5.0"
+  },
+  "dependencies": {
+    "core-js": "^2.4.1",
+    "isomorphic-fetch": "^2.2.1",
+    "material-ui": "^0.16.4",
+    "react": "^15.4.1",
+    "react-dom": "^15.4.1",
+    "react-tap-event-plugin": "^2.0.1"
+  }
+}

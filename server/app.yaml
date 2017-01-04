@@ -1,0 +1,23 @@
+application: cvv-chat
+version: master
+
+runtime: go
+api_version: go1
+
+handlers:
+
+- url: /site/hoda5
+  static_dir: public/hoda5
+  secure: always
+
+- url: /site/multlab
+  static_dir: public/multlab
+  secure: always  
+
+- url: /.*
+  script: _go_app
+  secure: always
+
+builtins: 
+- default: on
+- remote_api: off

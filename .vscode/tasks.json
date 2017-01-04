@@ -1,0 +1,14 @@
+{
+  "version": "0.1.0",
+  "command": "bash",
+  "isShellCommand": true,
+  "args": ["runtask.sh"],
+  "showOutput": "always",  
+  "tasks": [
+    {
+      "taskName": "build:test:debug",
+      "args": [],
+      "echoCommand": true
+    }
+  ]
+}

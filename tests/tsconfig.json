@@ -1,0 +1,30 @@
+{
+    "typeAcquisition": {
+        "enable": true
+    },
+    "compileOnSave": false,
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "lib": [
+            "dom",
+            "es2015",
+            "es2016"
+        ],
+        "jsx": "react",
+        "target": "es5",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "noImplicitAny": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "removeComments": false,
+        "preserveConstEnums": true,
+        "sourceMap": true,
+        "allowJs": false,
+        "skipLibCheck": true,
+        "outDir": "built"
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}
