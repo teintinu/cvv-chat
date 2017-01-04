@@ -20,7 +20,9 @@
       "program": "${workspaceRoot}/tests/node_modules/mocha/bin/_mocha",
       "args": [
         "-t", "19999",
-        "built/loginAnaTest.js"
+        "-g",
+        "chat",
+        "built/"
       ],
       "cwd": "${workspaceRoot}/tests",
       "outFiles": [],

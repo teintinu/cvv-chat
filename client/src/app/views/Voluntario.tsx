@@ -102,7 +102,7 @@ export class VoluntarioDisponibilidade extends React.Component<{}, {}> {
           Canais <br /><br />
           { state.server_state.disponibilidade.can_audio?
           <Toggle
-            label="Atender por audio" style={styles.toggle}
+            label="Atender por voz" style={styles.toggle}
             checked={state.server_state.disponibilidade.enable && state.canal.audio}
             disabled={!(state.server_state.disponibilidade.can_audio && state.server_state.disponibilidade.enable)}
             labelPosition="right"
@@ -149,7 +149,7 @@ function Status() {
     <tbody>
       <tr>
         <th></th>
-        <th>Audio</th>
+        <th>Voz</th>
         <th>Chat</th>
         <th>Video</th>
       </tr>

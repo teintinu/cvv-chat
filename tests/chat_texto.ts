@@ -13,6 +13,7 @@ describe('chat-texto: Voluntária Ana, OP: Maria e Joao', function() {
       return cenario.ana.login();
     });
     it('ana aguardando', function() {
+      debugger
       return cenario.ana.pause(100);
     });
     it('maria chamando', function() {

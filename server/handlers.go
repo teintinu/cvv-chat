@@ -1,43 +1,36 @@
-package multlab
+package hoda5Server
 
 import (
-	"bytes"
-	"errors"
+	"io"
 	"fmt"
-	"h5lib"
 	"net/http"
-	"strconv"
-	"strings"
-	"time"
-
 	"appengine"
 )
 
-// http://localhost:8080/api//api/voluntario/conectart=tk_ana&c=audio
+// http://localhost:8080/api/voluntario/conectar?i=tk_ana&t=1&a=1&v=0
 func handleVoluntarioConectar(w http.ResponseWriter, r *http.Request) {
-
-	var ctx, errinsecure = h5lib.Hoda5Context(r)
-	if errinsecure != nil {
-		h5lib.ServeError(ctx, w, r, errinsecure, http.StatusForbidden)
-		return
-	}
-
+	var ctx = appengine.NewContext(r)
 	var q = r.URL.Query()
 
-	var token = q["t"][0]
+	var token = q["i"][0]
+	var texto = q["t"][0] == "1"
+	var audio = q["a"][0] == "1"
+	var video = q["v"][0] == "1"
 
-	var lab, errlab = qryLaboratorioPorToken(ctx, token)
-	if errlab != nil {
-		h5lib.ServeError(ctx, w, r, errlab, http.StatusNotFound)
+	 info, err := soaVoluntarioConectar(ctx, token, texto, audio, video)
+	if err != nil {
+		w.WriteHeader(401)
+		w.Header().Set("Content-Type", "text/plain")
+		io.WriteString(w, "Internal Server Error")
+		io.WriteString(w, err.Error())
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 	fmt.Fprintf(w, "{")
-	fmt.Fprintf(w, "\"nome\": \"%v\"", lab.data.Sigla)
+	fmt.Fprintf(w, "\"nome\": \"%v\"", info)
 	fmt.Fprintf(w, "}")
-
 }
 
 // // // http://localhost:8080/api/multlab/ResultadoOpRegistrar?t=t0k3n_t3st3&p=1601.000.000-9&s=123456&m=m3d&d=26-jan-2016&l=100&e=60&u=n

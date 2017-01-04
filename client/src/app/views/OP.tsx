@@ -36,7 +36,7 @@ export class OP extends React.Component<{}, {}> {
         <h1>Canais de atendimento<br/> do CVV</h1>
         <p style={{margin: "2em"}}>Escolha como você prefire ser atendido(a) pelo CVV</p>
         <Toggle
-          label="Aceito ser atendido(a) por audio"
+          label="Aceito ser atendido(a) por voz"
           style={styles.toggle}
           checked={state.canal.audio}
           labelPosition="right"
