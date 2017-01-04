@@ -6,13 +6,9 @@ api_version: go1
 
 handlers:
 
-- url: /site/hoda5
-  static_dir: public/hoda5
+- url: /site/
+  static_dir: public/
   secure: always
-
-- url: /site/multlab
-  static_dir: public/multlab
-  secure: always  
 
 - url: /.*
   script: _go_app
