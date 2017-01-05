@@ -1,8 +1,7 @@
 package hoda5Server
 
 import (
-	"fmt"
-	// "log"
+	"log"
 	// "strconv"
 	// "strings"
 	"time"
@@ -13,121 +12,100 @@ import (
 	// "errors"
 )
 
-var FilaEntity = "h5_fila_"
-
+// entidy
+var filaEntity = "h5_fila"
+ 
+// data
 type Fila struct {
-	TS            time.Time `datastore:",index"`
-	tokens []string `datastore:",noindex"`
+	TS     time.Time `datastore:",noindex"`
+	Tokens []string `datastore:",noindex"`
 }
 
+// cache
 type FilaCache struct {
 	key  *datastore.Key
 	data *Fila
 }
 
-func qryFila(contexto appengine.Context, nome string) (fila *FilaCache, err error) {
+// cache
+type FilaCacheTokens = []string
 
-	var chave_cache = FilaEntity+nome
-	var ancestor=datastore.NewKey(contexto, FilaEntity, nome, 0, nil)
-	fmt.Printf("\nqryFila %v", chave_cache)
+func qryFila(contexto appengine.Context, nome string) (fila FilaCacheTokens, err error) {
+
+	var chaveCache = FilaEntity+nome
+	log.Printf("qryFila %v", chave_cache)
 
 	var cache FilaCache
 
 	var _, cacheerr = memcache.Gob.Get(contexto, chave_cache, &cache)
 	if cacheerr == nil {
-		fmt.Printf("\nqryFila get cache %v", cache)
+		log.Printf("qryFila get cache %v", cache)
 		return &cache, nil
 	}	
 
-	var query = datastore.
-		NewQuery(FilaEntity+nome).
-		Ancestor(ancestor).
-		Order("-TS").
-		Limit(1)
-		
-	var cursor = query.Run(contexto)
+	var ancestor []*datastore.Key
+	var rm_keys []*datastore.Key
+	var novo FilaCache
 
-	var data Fila
-	cache.key, err = cursor.Next(&data)
+  ancestor, cache, novo, rm_keys, err = load(contexto, nome)
+
 	if err == datastore.Done {
-		data = Fila{
-			TS: time.Now(),
-			tokens: []string{},
-		}
-		cache.key=datastore.NewKey(contexto, FilaEntity, "", data.TS.Unix(), ancestor)
-		_, err = datastore.Put(contexto, cache.key, &data)
-		if err != nil {
-			return nil, err
-		}
-	} else if err != nil {
+		cache=novo;
+		_, err = datastore.Put(contexto, cache.key, cache.data)
+	} 
+	if err != nil {
 		return nil, err
 	}
 
-	cache.data = &data
-	fila = &cache
+	fila = cache
 	var item = &memcache.Item{
 		Key:    chave_cache,
 		Object: cache,
 	}
-  fmt.Printf("\nqryFila set cache %v + %v", item.Key, item.Object)
+  log.Printf("qryFila set cache %v + %v", item.Key, item.Object)
 	memcache.Gob.Set(contexto, item)
+	if len(rm_keys)>0 {
+	  _ = datastore.DeleteMulti(contexto, rm_keys)
+	}
 	return
 }
 
-func updFila(contexto appengine.Context, nome string, upd_fn func(fila *Fila) (updated bool, err error)) (updated bool, filaUpd *Fila, err error) {
+func updFila(m_contexto appengine.Context, nome string, upd_fn func(fila *Fila) (updated bool, err error)) (updated bool, filaUpd *Fila, err error) {
 	var chave_cache = FilaEntity+nome
-	var ancestor=datastore.NewKey(contexto, FilaEntity, nome, 0, nil)
-	fmt.Printf("\nupdFila %v", chave_cache)
+	log.Printf("updFila %v", chave_cache)
 	updated=false
   var rm_keys []*datastore.Key
 	var cache FilaCache; 
 	
-	err=datastore.RunInTransaction(contexto, func (contexto appengine.Context) error {
-		fmt.Printf("\nupdFila -query")
-		var query = datastore.
-				NewQuery(FilaEntity).
-		    Ancestor(ancestor).
-				Order("-TS").
-				Limit(10)
-				
-			var cursor = query.Run(contexto)
-fmt.Printf("\nupdFila -cursor")
-			var data Fila
-			cache.key, err = cursor.Next(&data)
-			if err == datastore.Done {
-				fmt.Printf("\nupdFila - not found")
-				data = Fila{
-					TS: time.Now(),
-					tokens: []string{},
-				}
-				if err != nil {
-					return err
-				}
-			} else if err != nil {
-				return err
-			}   
-				fmt.Printf("\nupdFila - upd_fn")
-			updated, err = upd_fn(&data);
+	err=datastore.RunInTransaction(m_contexto, func (contexto appengine.Context) error {
+		  var ancestor []*datastore.Key
+			var maior FilaCache
+			var novo FilaCache
+			var rm_keys []*datastore.Key
+			
+			ancestor, maior, novo, rm_keys, err = load(contexto, nome)
+
+			var cache=novo;
+
+			log.Printf("updFila - upd_fn - %v ", data)
+			updated, err = upd_fn(cache.data);
 			if err != nil {
-				fmt.Printf("\nupdFila - upd_fn - err")
+				log.Printf("updFila - upd_fn - err")
 				return err
 			}   
 			if (updated) {
-				fmt.Printf("\nupdFila - upd_fn - update %v", data)
-  		data.TS = time.Now()
-				fmt.Printf("\nupdFila - upd_fn - update %v", data)
+				log.Printf("updFila - upd_fn - update %v", data)
 				cache.key=datastore.NewKey(contexto, FilaEntity, "", data.TS.Unix(), ancestor)
 				cache.data=&data
-  			fmt.Printf("\ngravando %v", cache)
 			  _, err = datastore.Put(contexto, cache.key, &data)
+  			log.Printf("gravado %v %v %v", cache.key, &data, err)
 				var item = &memcache.Item{
 					Key:    chave_cache,
 					Object: cache,
 				}
-				fmt.Printf("\nupdFila set cache %v + %v", item.Key, item.Object)
+				log.Printf("updFila set cache %v + %v", item.Key, item.Object)
 				memcache.Gob.Set(contexto, item)
 			}
-
 
 			var rm_key, rm_err = cursor.Next(&data)
 			for rm_err != datastore.Done {
@@ -144,23 +122,71 @@ fmt.Printf("\nupdFila -cursor")
 	return updated, cache.data, err;
 }
 
+func load(contexto appengine.Context, nome string ) (ancestor []*datastore.Key, maior FilaCache, novo FilaCache, rm_keys []*datastore.Key, err error  ) {
+	ancestor=datastore.NewKey(contexto, FilaEntity, nome, 0, nil)
+	var query = datastore.
+		NewQuery(FilaEntity).
+		Ancestor(ancestor)
+		
+	var cursor = query.Run(contexto)
+	var data Fila;
+	var key []*datastore.Key
+	var first = true
+	key, err = cursor.Next(&data)
+	maior = FilaCache{	
+		key: key,
+		data: &data,
+	}
+	for err != datastore.Done {
+		if (first) {
+			first=false
+		} else {
+			if (maior.data.TS < data.TD) {
+		    rm_keys=append(rm_keys, maior.key)
+				maior = FilaCache{	
+					key: key,
+					data: &data,
+				}
+			} else {
+		    keys=append(rm_keys, key)
+			}
+		  key, err = cursor.Next(&data)
+		}
+	}	
+	novo.key=datastore.NewKey(contexto, FilaEntity, "", data.TS.Unix(), ancestor)		
+	if (first) {
+		novo.data = Fila{
+			TS: time.Now(),
+			Tokens: []string{},
+		} 
+	}	else {
+		novo.data = maior.data;
+		novo.data.TS=time.Now(),
+		if (err = datastore.Done) {
+			err=nil;
+		}
+	}
+	return
+}
+
 func soaDisponibilizar(contexto appengine.Context, token string, canal string) (updated bool, fila *Fila, err error) {	
+	log.Printf("soaDisponibilizar %v %v", token, canal)
 	return updFila(contexto, canal, func(fila *Fila) (updated bool, err error) {		
-		fmt.Printf("\nantes %v", fila)
+		log.Printf("antes %v", fila)
 	  updated = put_token(fila, token)
-		fmt.Printf("\ndepois %v", fila)
+		log.Printf("depois %v", fila)
 		return updated, nil
 	})	
 }
 
 func put_token(fila *Fila, token string) bool{
-	for i := 0; i < len(fila.tokens); i++ {		
-		if fila.tokens[i] == token {
+	for i := 0; i < len(fila.Tokens); i++ {		
+		if fila.Tokens[i] == token {
 			return false
 		}
 	}
 
-	fila.tokens = append(fila.tokens, token)
+	fila.Tokens = append(fila.Tokens, token)
   return true;
 }
 

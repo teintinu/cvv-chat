@@ -42,10 +42,10 @@ func TestChatTexto(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
-	time.Sleep(3000000000)
+	time.Sleep(300000000)
   assertQryFila(t, contexto, "texto", []string{})
   assertQryFila(t, contexto, "audio", []string{"tk-ana"})
-  assertQryFila(t, contexto, "audio", fila1.tokens)
+  assertQryFila(t, contexto, "audio", fila1.Tokens)
   assertQryFila(t, contexto, "video", []string{})
 	
 }	
@@ -61,8 +61,8 @@ func assertQryFila(t *testing.T, contexto appengine.Context, nome string, espera
 
 func assertFila(t *testing.T, contexto appengine.Context, data *Fila, esperado []string) {
 	var erro="";
-	for i := 0; i < len(data.tokens); i++ {		
-		var atual=data.tokens[i]
+	for i := 0; i < len(data.Tokens); i++ {		
+		var atual=data.Tokens[i]
 		if (i>=len(esperado)) {
 			erro=fmt.Sprintf("\n  tokens[%v] inesperado",i)
 			break;
@@ -72,11 +72,11 @@ func assertFila(t *testing.T, contexto appengine.Context, data *Fila, esperado [
 			}
 	}
 
-	if len(data.tokens) < len(esperado) {
+	if len(data.Tokens) < len(esperado) {
 		erro=fmt.Sprintf("\n  Era esperado mais itens")
 	}
 	if (erro!="") {
-		t.Fatalf("\nassertFila:%v \n  esperado=%v \n  atual=%v", erro, esperado, data.tokens)
+		t.Fatalf("\nassertFila:%v \n  esperado=%v \n  atual=%v", erro, esperado, data.Tokens)
 	}
 }
 

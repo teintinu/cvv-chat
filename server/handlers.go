@@ -19,9 +19,9 @@ func handleVoluntarioConectar(w http.ResponseWriter, r *http.Request) {
 
 	 info, err := soaVoluntarioConectar(ctx, token, texto, audio, video)
 	if err != nil {
-		w.WriteHeader(401)
+		w.WriteHeader(501)
 		w.Header().Set("Content-Type", "text/plain")
-		io.WriteString(w, "Internal Server Error")
+		io.WriteString(w, "Internal Server Error\n")
 		io.WriteString(w, err.Error())
 		return
 	}

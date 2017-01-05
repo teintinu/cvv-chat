@@ -9,4 +9,8 @@
     "**/.DS_Store": true,
     "node_modules": true
   }
+,
+"go.gopath": "/home/hoda51/go_appengine/gopath",
+"go.goroot": "/home/hoda51/go_appengine/goroot",
+"go.coverOnSave": true
 }

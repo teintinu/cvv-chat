@@ -257,12 +257,22 @@ export function init() {
   if (_view == 'OP') state.solicitarAtendimento();
   else if (_view == 'Voluntario') state.loginVoluntario();
   else _view = 'home';
-  var s = document.createElement('script');
-  s.setAttribute('src', 'https://cdn.rawgit.com/peers/peerjs/10529b6335f545e35219e231c75196e6c83ea577/dist/peer.min.js');
-  s.onload = function () {
-    loaded('vfanh8qxv5oh6w29');
-  };
-  document.head.appendChild(s);
+  var js=[
+    'https://cdn.pubnub.com/pubnub.min.js', 
+    'http://cdn.pubnub.com/pubnub-crypto.min.js', 
+    'https://cdn.rawgit.com/thr0w/webrtc-sdk/gh-pages/js/webrtc.js',
+    'https://cdn.rawgit.com/thr0w/bootstrap-content-curator/gh-pages/dist/js/pubnub-sync.js'
+  ];
+  load();
+  function load() {
+    var s = document.createElement('script');  
+    s.setAttribute('src', js.shift());
+    s.onload = function () {
+      if (js.length) load()
+      else loaded('vfanh8qxv5oh6w29');
+    };
+    document.head.appendChild(s);
+  }
 }
 
 export function loadConfig() {

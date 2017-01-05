@@ -2,7 +2,7 @@ package hoda5Server
 
 import (
 
-	// "log"
+	"log"
 	// "strconv"
 	// "strings"
 
@@ -10,25 +10,27 @@ import (
 	// "errors"
 )
 
-func soaVoluntarioConectar(contexto appengine.Context, token string, texto bool, audio bool, video bool) (fila *Fila, err error) {
-  fila=nil;
+func soaVoluntarioConectar(contexto appengine.Context, status *Status, token string, texto bool, audio bool, video bool) (err error) {
+  log.Printf("\n1")
+  var nomefila="v:"+token;
 	if texto {
-		_,fila,err=soaDisponibilizar(contexto, token, "texto")
+		_,status.Voluntarios.texto,err=soaDisponibilizar(contexto, nomefila, "texto")
     if (err!=nil) {
       return nil,err
     }
 	}
+  log.Printf("\n2")
 	if audio {
-		_,fila,err=soaDisponibilizar(contexto, token, "audio")
+		_,status.Voluntarios.,err=soaDisponibilizar(contexto, nomefila, "audio")
     if (err!=nil) {
       return nil,err
     }
 	}
 	if video {
-		_,fila,err=soaDisponibilizar(contexto, token, "video")
+		_,status.Voluntarios.,err=soaDisponibilizar(contexto, nomefila, "video")
     if (err!=nil) {
       return nil,err
     }
 	}
-  return fila,nil
+  return nil
 }
