@@ -1,5 +1,6 @@
-import { rpc, Status, Atendimento, Disponibilidade } from './api';
-import { loaded } from './peer';
+
+import { Status, Atendimento, Disponibilidade } from './api';
+import { configure_server, Server, _server_state } from './peer';
 
 var _eventos: {
   [index: string]: Array<() => void>
@@ -27,46 +28,9 @@ var _snackbars: Array<{
   onAction: () => void,
   onClose: () => void
 }> = []
-var _carregando: boolean = false;
+var _carregando: boolean = true;
 type View = 'home' | 'OP' | 'Voluntario' | 'Atendimento';
 var _view: View = 'home';
-var _server_state: {
-  status: Status,
-  disponibilidade: Disponibilidade,
-  atendimento: Atendimento
-} = {
-    status: {
-      on: 0,
-      onTexto: 0,
-      onAudio: 0,
-      onVideo: 0,
-      idle: 0,
-      idleTexto: 0,
-      idleAudio: 0,
-      idleVideo: 0,
-      filaTexto: 0,
-      filaAudio: 0,
-      filaVideo: 0
-    },
-    disponibilidade: {
-      id: '',
-      nome: '',
-      token: '',
-      enable: false,
-      can_texto: false,
-      can_audio: false,
-      can_video: false,
-      logado() {
-        return false;
-      }
-    },
-    atendimento: {
-      tokenOP: '',
-      fila_texto: 0,
-      fila_audio: 0,
-      fila_video: 0,
-    }
-  };
 
 class State {
   get carregando() {
@@ -86,10 +50,6 @@ class State {
   }
   get server_state() {
     return _server_state;
-  }
-  set server_state(value) {
-    _server_state = value;
-    dispatch('changed');
   }
   get canal() {
     return _canais;
@@ -124,10 +84,8 @@ class State {
     state.showSnackbar('Esta função ainda não foi implementada');
   }
   home() {
-    _view='home';
-    _server_state.atendimento.connection = null;
-    _server_state.disponibilidade.id = '';
-    dispatch("changed")
+    _view = 'home';
+    _server.disconnect();
   }
   loginVoluntario(login?: string, senha?: string) {
     if (state.view == 'home') {
@@ -141,24 +99,12 @@ class State {
         return state.showSnackbar("Login inválido");
       }
       state.carregando = true;
-      rpc.login(login, senha, (err, disponibilidade: Disponibilidade) => {
+      _server.login(login, senha, (err: Error) => {
         _carregando = false;
         if (err)
           state.showSnackbar(err.message);
         else {
           _view = 'Voluntario';
-          _server_state.disponibilidade = disponibilidade;
-          var _enable = disponibilidade.enable;
-          Object.defineProperty(_server_state.disponibilidade, 'enable', {
-            get() {
-              return _enable;
-            },
-            set(value) {
-              _enable = value;
-              dispatch('changed');
-            }
-          });
-          dispatch('changed');
           saveConfig();
         }
       });
@@ -168,9 +114,7 @@ class State {
     state.view = 'OP';
     state.carregando = true;
 
-    rpc.chamar(['audio'], (err, status, atendimento) => {
-      state.server_state.status = status;
-      state.server_state.atendimento = atendimento;
+    _server.chamar(['audio'], (err) => {
       state.carregando = false;
     });
   }
@@ -253,23 +197,32 @@ function snackbar_show() {
   dispatch('changed');
 }
 
+var _server: Server;
+declare var firebase: any;
+
 export function init() {
-  if (_view == 'OP') state.solicitarAtendimento();
-  else if (_view == 'Voluntario') state.loginVoluntario();
-  else _view = 'home';
-  var js=[
-    'https://cdn.pubnub.com/pubnub.min.js', 
-    'http://cdn.pubnub.com/pubnub-crypto.min.js', 
-    'https://cdn.rawgit.com/thr0w/webrtc-sdk/gh-pages/js/webrtc.js',
-    'https://cdn.rawgit.com/thr0w/bootstrap-content-curator/gh-pages/dist/js/pubnub-sync.js'
+  var js = [
+    'https://www.gstatic.com/firebasejs/3.6.4/firebase.js',
+    // 'https://cdn.pubnub.com/pubnub.min.js', 
+    // 'http://cdn.pubnub.com/pubnub-crypto.min.js', 
+    // 'https://cdn.rawgit.com/thr0w/webrtc-sdk/gh-pages/js/webrtc.js',
+    // 'https://cdn.rawgit.com/thr0w/bootstrap-content-curator/gh-pages/dist/js/pubnub-sync.js'
   ];
   load();
   function load() {
-    var s = document.createElement('script');  
+    var s = document.createElement('script');
     s.setAttribute('src', js.shift());
     s.onload = function () {
       if (js.length) load()
-      else loaded('vfanh8qxv5oh6w29');
+      else {
+        _server = configure_server(firebase, () => dispatch('changed'));
+        loadConfig();
+        if (_view == 'OP') state.solicitarAtendimento();
+        else if (_view == 'Voluntario') state.loginVoluntario();
+        else _view = 'home';
+        _carregando = false;
+        dispatch('changed')
+      }
     };
     document.head.appendChild(s);
   }

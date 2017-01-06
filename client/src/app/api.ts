@@ -96,57 +96,6 @@ export interface Status {
     "filaVideo": number;
 }
 
-export const rpc = {
-    chamar(canais: Canal[], callback: (err: Error, status: Status, atendimento: Atendimento) => void) {
-        setTimeout(function () {
-            callback(null, {
-                on: 100,
-                onTexto: 30,
-                onAudio: 50,
-                onVideo: 30,
-                idle: 40,
-                idleTexto: 20,
-                idleAudio: 30,
-                idleVideo: 25,
-                filaTexto: 20,
-                filaAudio: 30,
-                filaVideo: 25
-            },
-                {
-                    tokenOP: Math.random().toString(),
-                    fila_texto: 10,
-                    fila_audio: 1,
-                    fila_video: 2,
-                    connection: Math.random() > 0.9 ?
-                        {
-                            idVoluntario: '245',
-                            tokenVoluntario: '245',
-                            canal: canais[0]
-                        }
-                        : null
-                });
-        }, 2000);
-    },
-    login(login: string, senha: string, callback: (err: Error, disponibilidade: Disponibilidade) => void): void {
-        setTimeout(function () {
-            var _enable=true;
-            var r = {
-                id: login,
-                nome: login,
-                token: '123',
-                can_texto: true,
-                can_audio: true,
-                can_video: true,
-                enable: true,
-                logado() {
-                    return r.id && (r.can_texto || r.can_audio || r.can_video);
-                }
-            };
-            callback(null, r);
-        }, 2000);
-    }
-}
-
 /**
  * DefaultApi - fetch parameter creator
  */

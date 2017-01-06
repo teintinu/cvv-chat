@@ -6,6 +6,7 @@ import Paper from 'material-ui/Paper';
 import RaisedButton from 'material-ui/RaisedButton';
 import EnhancedButton from 'material-ui/internal/EnhancedButton';
 import {white, green700} from 'material-ui/styles/colors';
+import CircularProgress from 'material-ui/CircularProgress';
 
 const styles = {
   container: {
@@ -42,6 +43,8 @@ const styles = {
 
 export class Home extends React.Component<{}, {}> {
   render() {
+    if (state.carregando)
+      return <CircularProgress size={80} thickness={5} />    
     return <div style={styles.container}>
       <p style={{height: '2em'}}></p>
       <Paper style={styles.paper} zDepth={1} circle={true} 
