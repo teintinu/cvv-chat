@@ -65,7 +65,9 @@ export class VoluntarioLogin extends React.Component<{}, { login: string, senha:
         value={this.state.senha}
         onChange={(function (e) { self.setState({ login: self.state.login, senha: arguments[1] }); })}
         />
-      <RaisedButton label="Acessar" tabIndex={2001} primary={true} onTouchTap={() => state.loginVoluntario(self.state.login, self.state.senha)} />
+      <RaisedButton label="Acessar" tabIndex={2001} primary={true} onTouchTap={() => state.loginVoluntario(self.state.login, self.state.senha)} /> <br />
+      <RaisedButton label="Usar Google" tabIndex={2001} primary={true} onTouchTap={() => state.loginVoluntario('@@@', 'g')} /> <br />
+      <RaisedButton label="Usar Facebook" tabIndex={2001} primary={true} onTouchTap={() => state.loginVoluntario('@@@', 'f')} /> <br />
       <RaisedButton label="Retornar" onTouchTap={() => state.home()} />
       {<Status></Status>}
     </div>;
@@ -78,7 +80,7 @@ export class VoluntarioDisponibilidade extends React.Component<{}, {}> {
     return <div style={styles.container}>
       {state.server_state.disponibilidade.enable ?
          <div> 
-           <h1 id="vdisponivel">{state.server_state.disponibilidade.nome}x</h1>
+           <h1 id="vdisponivel">{state.server_state.disponibilidade.nome}</h1>
           <span>
             <p>Aguarde até que a OP nos procure</p>
           </span>

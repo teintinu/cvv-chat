@@ -105,8 +105,48 @@ class State {
           state.showSnackbar(err.message);
         else {
           _view = 'Voluntario';
-          saveConfig();
+          var _enable=true, _can_texto=true, _can_audio=true, _can_video=false;
+          Object.defineProperties(_server_state.disponibilidade, {
+            enable: {
+              get() {
+                 return _enable;
+              },
+              set(value: boolean) {
+                _enable=value;
+                dispatch('changed');
+              }
+            },
+            can_texto: {
+              get() {
+                 return _can_texto;
+              },
+              set(value: boolean) {
+                _can_texto=value;
+                dispatch('changed');
+              }
+            },
+            can_audio: {
+              get() {
+                 return _can_audio;
+              },
+              set(value: boolean) {
+                _can_audio=value;
+                dispatch('changed');
+              }
+            },
+            can_video: {
+              get() {
+                 return _can_video;
+              },
+              set(value: boolean) {
+                _can_video=value;
+                dispatch('changed');
+              }
+            },
+          });
+          saveConfig();         
         }
+        dispatch('changed');
       });
     }
   }

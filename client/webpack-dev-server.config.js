@@ -18,7 +18,7 @@ config.plugins = [
 
 config.devServer = {
   contentBase: 'src/www', // Relative directory for base of server
-  devtool: 'eval',
+  devtool: 'source-map',
   hot: true, // Live-reload
   inline: true,
   port: 4000, // Port Number
@@ -26,6 +26,6 @@ config.devServer = {
   outputPath: config.output.path, 
 };
 config.debug= true;
-config.devtool= 'eval';
+config.devtool= 'source-map';
 
 module.exports = config;

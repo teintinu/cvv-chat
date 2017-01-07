@@ -54,10 +54,12 @@ export type Server = {
   login(name: string, password: string, callback: (err: Error)=>void): void,
 };
 
+
 export function configure_server(server: any, changed: ()=> void): Server {
   server.initializeApp(config);
-  // var db_o = server.sync('filaO');
-  // var db_v = server.sync('filaV');
+  var auth = server.auth();
+  var database = server.database();
+  var storage = server.storage();  
   return {
     disconnect() {
       _server_state.atendimento.connection = null;
@@ -102,8 +104,31 @@ export function configure_server(server: any, changed: ()=> void): Server {
       // callback(new Error('x'));
     },
     login(name: string, password: string, callback: (err: Error)=>void) {
-      // if (name+password=='')
-      //   callback(new Error('x'));
+      var p;
+      if (name=='@@@' && password =='g') {
+         var provider = new server.auth.GoogleAuthProvider();
+         p=auth.signInWithPopup(provider)
+      }
+      else if (name=='@@@' && password =='f') {
+         var provider = new server.auth.FacebookAuthProvider();
+         p=auth.signInWithPopup(provider);
+      }
+      if (p)
+        p.then( (res: any) => {          
+          debugger
+         if (res.user) {
+           _server_state.disponibilidade.id = res.user.uid;
+           _server_state.disponibilidade.nome = /([^\s]*)\s.*/g.exec(res.user.displayName+' ? ?')[1];
+           _server_state.disponibilidade.logado = ()=>true;
+           callback(null);
+         } else {
+           _server_state.disponibilidade.logado = ()=>false;
+           _server_state.disponibilidade.id = '';
+           callback(new Error('Login inválido'));
+         }
+        })
+      else
+        callback(new Error('não é possível logar assim'));
     }
   }
 }
