@@ -35,7 +35,7 @@ const styles = {
 export function Voluntario() {
   if (state.carregando)
     return <CircularProgress size={80} thickness={5} />
-  if (state.server_state.disponibilidade.logado())
+  if (state.server_state.disponibilidade.logado)
     return <VoluntarioDisponibilidade />
   return <VoluntarioLogin />
 }
@@ -140,6 +140,7 @@ export class VoluntarioDisponibilidade extends React.Component<{}, {}> {
 
           </div>
         }
+      <RaisedButton label="Desconectar" tabIndex={2001} primary={true} onTouchTap={() => state.logout()} /> <br />
       {Status()}
     </div>;
   }

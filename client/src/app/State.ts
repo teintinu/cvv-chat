@@ -1,6 +1,5 @@
 
 import { Status, Atendimento, Disponibilidade } from './api';
-import { configure_server, Server, _server_state } from './peer';
 
 var _eventos: {
   [index: string]: Array<() => void>
@@ -31,6 +30,50 @@ var _snackbars: Array<{
 var _carregando: boolean = true;
 type View = 'home' | 'OP' | 'Voluntario' | 'Atendimento';
 var _view: View = 'home';
+var config = {
+  apiKey: "AIzaSyDfaFK-b45-NlueU--RNUYTRqJV9w2wzyg",
+  authDomain: "i-cvv-hoda5.firebaseapp.com",
+  databaseURL: "https://i-cvv-hoda5.firebaseio.com",
+  storageBucket: "i-cvv-hoda5.appspot.com",
+  messagingSenderId: "912825779427"
+};
+
+export var _server_state: {
+  status: Status,
+  disponibilidade: Disponibilidade,
+  atendimento: Atendimento
+} = {
+    status: {
+      on: 0,
+      onTexto: 0,
+      onAudio: 0,
+      onVideo: 0,
+      idle: 0,
+      idleTexto: 0,
+      idleAudio: 0,
+      idleVideo: 0,
+      filaTexto: 0,
+      filaAudio: 0,
+      filaVideo: 0
+    },
+    disponibilidade: {
+      id: '',
+      nome: '',
+      token: '',
+      enable: false,
+      atendendo: false,
+      can_texto: false,
+      can_audio: false,
+      can_video: false,
+      logado: false
+    },
+    atendimento: {
+      tokenOP: '',
+      fila_texto: 0,
+      fila_audio: 0,
+      fila_video: 0,
+    }
+  };
 
 class State {
   get carregando() {
@@ -99,113 +142,67 @@ class State {
         return state.showSnackbar("Login inválido");
       }
       state.carregando = true;
-      _server.login(login, senha, (err: Error) => {
-        _carregando = false;
-        if (err)
-          state.showSnackbar(err.message);
-        else {
-          _view = 'Voluntario';
-          var _enable=true, _can_texto=true, _can_audio=true, _can_video=false;
-          Object.defineProperties(_server_state.disponibilidade, {
-            enable: {
-              get() {
-                 return _enable;
-              },
-              set(value: boolean) {
-                _enable=value;
-                dispatch('changed');
-              }
-            },
-            can_texto: {
-              get() {
-                 return _can_texto;
-              },
-              set(value: boolean) {
-                _can_texto=value;
-                dispatch('changed');
-              }
-            },
-            can_audio: {
-              get() {
-                 return _can_audio;
-              },
-              set(value: boolean) {
-                _can_audio=value;
-                dispatch('changed');
-              }
-            },
-            can_video: {
-              get() {
-                 return _can_video;
-              },
-              set(value: boolean) {
-                _can_video=value;
-                dispatch('changed');
-              }
-            },
-          });
-          saveConfig();         
-        }
-        dispatch('changed');
-      });
+      _server.login(login, senha);
     }
+  }
+  logout() {
+    _server.logout();
   }
   solicitarAtendimento() {
     state.view = 'OP';
     state.carregando = true;
-
-    _server.chamar(['audio'], (err) => {
-      state.carregando = false;
-    });
+    _server.chamar(['audio']);
   }
 };
 
-class Canal<T> {
-  constructor(private _change: boolean,
-    private _save: boolean,
-    private _texto?: T,
-    private _audio?: T,
-    private _video?: T
-  ) {
-  }
-  get texto(): T {
-    return this._texto;
-  }
-  set texto(value: T) {
-    this._texto = value;
-    if (this._change)
-      dispatch("changed");
-    if (this._save)
-      saveConfig();
-  }
-  get audio(): T {
-    return this._audio;
-  }
-  set audio(value: T) {
-    this._audio = value;
-    if (this._change)
-      dispatch("changed");
-    if (this._save)
-      saveConfig();
-  }
-  get video(): T {
-    return this._video;
-  }
-  set video(value: T) {
-    this._video = value;
-    if (this._change)
-      dispatch("changed");
-    if (this._save)
-      saveConfig();
-  }
-}
+var __canais: any={};
+var _canais = Object.defineProperties({}, {
+  texto: { 
+    get(): boolean {
+      return __canais.texto;
+    },
+    set(value: boolean) {
+      __canais.texto = value;
+      if (_server_state.disponibilidade.logado) {
+        _server.grava_disponibilidade();
+        saveConfig();
+        dispatch("changed");
+      }
+    }
+  },
+  audio: { 
+    get(): boolean {
+      return __canais.audio;
+    },
+    set(value: boolean) {
+      __canais.audio = value;
+      if (_server_state.disponibilidade.logado) {
+        _server.grava_disponibilidade();
+        saveConfig();
+        dispatch("changed");
+      }
+    }
+  },
+  video: { 
+    get(): boolean {
+      return __canais.video;
+    },
+    set(value: boolean) {
+      __canais.video = value;
+      if (_server_state.disponibilidade.logado) {
+        _server.grava_disponibilidade();
+        saveConfig();
+        dispatch("changed");
+      }
+    }
+  }  
+});
 
-var _canais = new Canal<boolean>(true, true, false, false, false);
 export var state = new State();
 
 function dispatch(evento: string) {
   if (_eventos_tm[evento]) clearTimeout(_eventos_tm[evento])
-  _eventos_tm[evento] = setTimeout(function () {
+  _eventos_tm[evento] = setTimeout(function() {
     delete _eventos_tm[evento];
     _eventos[evento].forEach((fn) => {
       try {
@@ -237,7 +234,247 @@ function snackbar_show() {
   dispatch('changed');
 }
 
-var _server: Server;
+var _server: {
+  disconnect(): void
+  status(): void
+  chamar(canais: string[]): void
+  login(name: string, password: string): void
+  logout(): void  
+  vfila(canal: string, id: string, b: boolean): void  
+  grava_disponibilidade(): void
+};
+
+export function configure_server(server: any, changed: () => void): typeof _server {
+  server.initializeApp(config);
+  var auth = server.auth();
+  var database = server.database();
+  var storage = server.storage();
+  type DbFila = {ts: number};
+  type DbDisp = {atendendo: boolean, pausado: boolean, texto: boolean, audio: boolean, video: boolean};
+  events();
+  return {
+    disconnect() {
+      _server_state.atendimento.connection = null;
+      _server_state.disponibilidade.id = '';
+      changed();
+    },
+    status() {
+      // var status: {
+      //   on: 0,
+      //   onTexto: 0,
+      //   onAudio: 0,
+      //   onVideo: 0,
+      //   idle: 0,
+      //   idleTexto: 0,
+      //   idleAudio: 0,
+      //   idleVideo: 0,
+      //   filaTexto: 0,
+      //   filaAudio: 0,
+      //   filaVideo: 0
+      // }
+      // _server_state.status = status;
+      // db_o.all( (v: any) => {
+      //   if (v.filaTexto) status.filaTexto++;
+      //   if (v.filaAudio) status.filaAudio++;
+      //   if (v.filaVideo) status.filaVideo++;
+      // });
+      // db_v.all( (v: any) => {
+      //   status.on++;
+      //   if (v.onTexto) status.onTexto++;
+      //   if (v.onAudio) status.onAudio++;
+      //   if (v.onVideo) status.onVideo++;
+      //   if (v.idle) {
+      //     status.idle++;
+      //     if (v.onTexto) status.idleTexto++;
+      //     if (v.onAudio) status.idleAudio++;
+      //     if (v.onVideo) status.idleVideo++;
+      //   }
+      // });
+    },
+    chamar(canais: string[]) {
+      // db_o
+      // callback(new Error('x'));
+    },
+    login(name: string, password: string) {
+      var p;
+      if (name == '@@@' && password == 'g') {
+        var provider = new server.auth.GoogleAuthProvider();
+        p = auth.signInWithPopup(provider)
+      }
+      else if (name == '@@@' && password == 'f') {
+        var provider = new server.auth.FacebookAuthProvider();
+        p = auth.signInWithPopup(provider);
+      }
+      if (p)
+        p.then((res: any) => {
+          if (!res.user)
+            state.showSnackbar('Credenciais inválidas');
+        })
+      else
+        state.showSnackbar('não é possível logar assim');
+    },
+    logout() {  
+      _view = 'home';
+      indisponivel()
+      auth.signOut();
+      saveConfig();
+    },
+    vfila(canal: string, id: string, b: boolean)  {
+      var key='vfila/'+canal+'/'+id;
+      if (b)
+        database.ref(key).set(<DbFila>{ts: new Date().getTime()})
+      else 
+        database.ref(key).remove()
+     database.ref('disp/'+id).update({
+       [canal]: b
+     });       
+    },
+    grava_disponibilidade() {
+      var d=_server_state.disponibilidade;
+      if (!d.id) 
+        throw new Error('grava_disponibilidade id?')
+      var e=d.id && d.logado && d.enable && (!d.atendendo);
+      _server.vfila('texto', d.id, e && d.can_texto && _canais.texto);
+      _server.vfila('audio', d.id, e && d.can_audio && _canais.audio);
+      _server.vfila('video', d.id, e && d.can_video && _canais.video);        
+      if (d.logado)
+        database.ref('disp/'+d.id).set(<DbDisp>{
+          atendendo: d.atendendo,
+          pausado: !d.enable,
+          texto: _canais.texto,
+          audio: _canais.audio,
+          video: _canais.video,
+        });
+      else
+        database.ref('disp/'+d.id).remove()       
+    }    
+  }
+  function events() {
+    auth.onAuthStateChanged((user:any)=>{
+      if (user) {
+        disponivel(
+          user.uid,
+          // TODO
+          /([^\s]*)\s.*/g.exec(user.displayName + ' ? ?')[1], 
+          true,
+          true,
+          false
+        )
+      } else indisponivel();
+      dispatch('changed');    
+    });
+    database.ref('disp').on('value', function(snapshot: any) {
+      var s=_server_state.status;
+      s.on = 0;
+      s.onTexto = 0;
+      s.onAudio = 0;
+      s.onVideo = 0;
+      s.idle = 0;
+      s.idleTexto = 0;
+      s.idleAudio = 0;
+      s.idleVideo = 0;
+      var disp: { [s: string]: DbDisp } = snapshot.val();
+      if (disp)
+        Object.keys(disp).forEach( (id) => {
+          var v = disp[id];
+          s.on++;
+          if (v.texto) s.onTexto++;
+          if (v.audio) s.onAudio++;
+          if (v.video) s.onVideo++;          
+          if (!v.atendendo) {
+            s.idle++;
+            if (v.texto) s.idleTexto++;
+            if (v.audio) s.idleAudio++;
+            if (v.video) s.idleVideo++;
+          } 
+        });
+      dispatch('changed');
+    });    
+  }
+
+
+      // filaTexto: 0,
+      // filaAudio: 0,
+      // filaVideo: 0
+
+}
+
+function disponivel(id: string, nome: string, can_texto: boolean, can_audio: boolean, can_video: boolean) {
+  var _enable = true, _atendendo=false;
+  _server_state.disponibilidade.id = id;
+  _server_state.disponibilidade.nome = nome;
+  _server_state.disponibilidade.logado = !!id;
+  _carregando = false;
+  if (id) {
+    _view = 'Voluntario';
+    Object.defineProperties(_server_state.disponibilidade, {
+      enable: {
+        get() {
+          return _enable;
+        },
+        set(value: boolean) {
+          _enable = !!value;
+          _server.grava_disponibilidade();
+        }
+      },
+      atendendo: {
+        get() {
+          return _atendendo;
+        },
+        set(value: boolean) {
+          _atendendo = !!value;
+          _server.grava_disponibilidade();
+        }
+      },
+      can_texto: {
+        get() {
+          return can_texto;
+        }
+      },
+      can_audio: {
+        get() {
+          return can_audio;
+        }
+      },
+      can_video: {
+        get() {
+          return can_video;
+        }
+      },
+    });
+    saveConfig();
+    _server.grava_disponibilidade();
+  }
+  else indisponivel();
+}
+
+function indisponivel() {
+  var d=_server_state.disponibilidade;
+  if (d.enable && d.id) {
+    d.logado=false;
+    _server.grava_disponibilidade();
+    d.id=''
+  }
+  dispatch('changed');
+}
+
+function calcStatus(value: any) {
+  _server_state.status = {
+    on: 0,
+    onTexto: 0,
+    onAudio: 0,
+    onVideo: 0,
+    idle: 0,
+    idleTexto: 0,
+    idleAudio: 0,
+    idleVideo: 0,
+    filaTexto: 0,
+    filaAudio: 0,
+    filaVideo: 0
+  };
+  // value && value.forEach( ())
+}
+
 declare var firebase: any;
 
 export function init() {
@@ -252,7 +489,7 @@ export function init() {
   function load() {
     var s = document.createElement('script');
     s.setAttribute('src', js.shift());
-    s.onload = function () {
+    s.onload = function() {
       if (js.length) load()
       else {
         _server = configure_server(firebase, () => dispatch('changed'));
@@ -298,3 +535,6 @@ export function saveConfig() {
   };
   localStorage.setItem("CVV", JSON.stringify(cfg));
 }
+
+
+

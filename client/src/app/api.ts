@@ -45,8 +45,9 @@ export interface Disponibilidade {
     can_texto: boolean
     can_audio: boolean
     can_video: boolean
-    enable: boolean
-    logado(): boolean
+    atendendo: boolean
+    enable: boolean 
+    logado: boolean
 }
 
 export interface Status {
