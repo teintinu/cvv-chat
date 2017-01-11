@@ -27,13 +27,13 @@ const BASE_PATH = "http://cvv.hoda5.com/api".replace(/\/+$/, '');
 export type Canal = "texto" | "audio" | "video";
 
 export interface Atendimento {
-    tokenOP: string
+    token: string
+    logado: number
     fila_texto: number
     fila_audio: number
     fila_video: number
-    connection?: {
-        idVoluntario: string
-        tokenVoluntario: string
+    conexao?: {
+        idVoluntario: string        
         canal: string
     }
 }
@@ -45,9 +45,13 @@ export interface Disponibilidade {
     can_texto: boolean
     can_audio: boolean
     can_video: boolean
-    atendendo: boolean
     enable: boolean 
-    logado: boolean
+    logado: number,
+    conexao?: {
+        pendente: number,
+        idOP: string,
+        canal: string
+    }
 }
 
 export interface Status {

@@ -35,7 +35,18 @@ const styles = {
 export function Voluntario() {
   if (state.carregando)
     return <CircularProgress size={80} thickness={5} />
-  if (state.server_state.disponibilidade.logado)
+  var d=state.server_state.disponibilidade;
+  if (d.conexao) {
+    if (d.conexao.pendente)
+      return <VoluntarioChamando />
+    if (d.conexao.canal == 'texto')
+      return <VoluntarioAtendimentoTexto />
+    if (d.conexao.canal == 'audio')
+      return <VoluntarioAtendimentoAudio />
+    if (d.conexao.canal == 'video')
+      return <VoluntarioAtendimentoVideo />
+  }
+  if (d.logado)
     return <VoluntarioDisponibilidade />
   return <VoluntarioLogin />
 }
@@ -144,6 +155,56 @@ export class VoluntarioDisponibilidade extends React.Component<{}, {}> {
       {Status()}
     </div>;
   }
+}
+
+export function VoluntarioChamando() {
+  return <div style={styles.container}>
+       <div> 
+         <h1 id="vchamando">Chamada de {state.server_state.disponibilidade.conexao.canal}</h1>
+        <span>
+          <p>CHAMANDO</p>
+        </span>
+      </div>
+    <RaisedButton label="Atender" tabIndex={2001} primary={true} onTouchTap={() => state.iniciarAtendimento()} /> <br />
+    {Status()}
+  </div>;  
+}
+
+export function VoluntarioAtendimentoTexto() {
+  return <div style={styles.container}>
+       <div> 
+         <h1 id="vatendimento">Chamada de {state.server_state.disponibilidade.conexao.canal}</h1>
+        <span>
+          <p>Atendendo -texto</p>
+        </span>
+      </div>
+    <RaisedButton label="Desligar" tabIndex={2001} primary={true} onTouchTap={() => state.terminarAtendimento()} /> <br />
+    {Status()}
+  </div>;  
+}
+export function VoluntarioAtendimentoAudio() {
+  return <div style={styles.container}>
+       <div> 
+         <h1 id="vatendimento">Chamada de {state.server_state.disponibilidade.conexao.canal}</h1>
+        <span>
+          <p>atendendo audio</p>
+        </span>
+      </div>
+    <RaisedButton label="Desligar" tabIndex={2001} primary={true} onTouchTap={() => state.terminarAtendimento()} /> <br />
+    {Status()}
+  </div>;  
+}
+export function VoluntarioAtendimentoVideo() {
+  return <div style={styles.container}>
+       <div> 
+         <h1 id="vatendimento">Chamada de {state.server_state.disponibilidade.conexao.canal}</h1>
+        <span>
+          <p>atendendo video</p>
+        </span>
+      </div>
+    <RaisedButton label="Desligar" tabIndex={2001} primary={true} onTouchTap={() => state.terminarAtendimento()} /> <br />
+    {Status()}
+  </div>;  
 }
 
 function Status() {

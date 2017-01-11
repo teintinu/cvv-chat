@@ -97,7 +97,7 @@ export class OP extends React.Component<{}, {}> {
           email ou pessoalmente. 
           Clique <a href="http://www.cvv.org.br/">aqui</a> para saber mais
         </p>
-        <RaisedButton label="Retornar" onTouchTap={() => state.home()} />
+        <RaisedButton label="Retornar" onTouchTap={() => state.logout()} />
     </div>;    
   }
 }

@@ -41,7 +41,9 @@ var config = {
 export var _server_state: {
   status: Status,
   disponibilidade: Disponibilidade,
-  atendimento: Atendimento
+  atendimento: Atendimento,
+  proximoV: string,
+  proximosOP: Array<{canal: string, token: string, ts: number}>
 } = {
     status: {
       on: 0,
@@ -61,18 +63,20 @@ export var _server_state: {
       nome: '',
       token: '',
       enable: false,
-      atendendo: false,
       can_texto: false,
       can_audio: false,
       can_video: false,
-      logado: false
+      logado: 0
     },
     atendimento: {
-      tokenOP: '',
+      token: '',
+      logado: 0,
       fila_texto: 0,
       fila_audio: 0,
-      fila_video: 0,
-    }
+      fila_video: 0,    
+    },
+    proximoV: '',
+    proximosOP: []
   };
 
 class State {
@@ -151,7 +155,13 @@ class State {
   solicitarAtendimento() {
     state.view = 'OP';
     state.carregando = true;
-    _server.chamar(['audio']);
+    _server.solicitarAtendimento();
+  }
+  iniciarAtendimento() {
+    _server.iniciaAtendimento();
+  }
+  terminarAtendimento() {
+    _server.terminarAtendimento();
   }
 };
 
@@ -163,8 +173,13 @@ var _canais = Object.defineProperties({}, {
     },
     set(value: boolean) {
       __canais.texto = value;
+      if (_server_state.atendimento.logado) {
+        _server.ofila();
+        saveConfig();
+        dispatch("changed");
+      }
       if (_server_state.disponibilidade.logado) {
-        _server.grava_disponibilidade();
+        _server.vfila();
         saveConfig();
         dispatch("changed");
       }
@@ -176,8 +191,13 @@ var _canais = Object.defineProperties({}, {
     },
     set(value: boolean) {
       __canais.audio = value;
+      if (_server_state.atendimento.logado) {
+        _server.ofila();
+        saveConfig();
+        dispatch("changed");
+      }
       if (_server_state.disponibilidade.logado) {
-        _server.grava_disponibilidade();
+        _server.vfila();
         saveConfig();
         dispatch("changed");
       }
@@ -189,8 +209,13 @@ var _canais = Object.defineProperties({}, {
     },
     set(value: boolean) {
       __canais.video = value;
+      if (_server_state.atendimento.logado) {
+        _server.ofila();
+        saveConfig();
+        dispatch("changed");
+      }
       if (_server_state.disponibilidade.logado) {
-        _server.grava_disponibilidade();
+        _server.vfila();
         saveConfig();
         dispatch("changed");
       }
@@ -237,11 +262,14 @@ function snackbar_show() {
 var _server: {
   disconnect(): void
   status(): void
-  chamar(canais: string[]): void
+  solicitarAtendimento(): void
   login(name: string, password: string): void
   logout(): void  
-  vfila(canal: string, id: string, b: boolean): void  
-  grava_disponibilidade(): void
+  vfila(): void
+  ofila(): void
+  podeAtender(): void;
+  iniciaAtendimento(): void;
+  terminarAtendimento(): void;
 };
 
 export function configure_server(server: any, changed: () => void): typeof _server {
@@ -249,12 +277,11 @@ export function configure_server(server: any, changed: () => void): typeof _serv
   var auth = server.auth();
   var database = server.database();
   var storage = server.storage();
-  type DbFila = {ts: number};
-  type DbDisp = {atendendo: boolean, pausado: boolean, texto: boolean, audio: boolean, video: boolean};
+  type DbFila = {qts: number,sts: number,atendendo: string, pausado: boolean, texto: boolean, audio: boolean, video: boolean};
   events();
   return {
     disconnect() {
-      _server_state.atendimento.connection = null;
+      _server_state.atendimento.conexao = null;
       _server_state.disponibilidade.id = '';
       changed();
     },
@@ -291,9 +318,17 @@ export function configure_server(server: any, changed: () => void): typeof _serv
       //   }
       // });
     },
-    chamar(canais: string[]) {
-      // db_o
-      // callback(new Error('x'));
+    solicitarAtendimento() {      
+      if (firebase.auth().currentUser)
+        auth.signOut().then( () => {
+          OP_saiu(); 
+          _server.solicitarAtendimento()
+        });
+      else
+        firebase.auth().signInAnonymously().then((user: any) => {
+          if (!user)
+            state.showSnackbar('Credenciais inválidas');
+        })
     },
     login(name: string, password: string) {
       var p;
@@ -314,44 +349,85 @@ export function configure_server(server: any, changed: () => void): typeof _serv
         state.showSnackbar('não é possível logar assim');
     },
     logout() {  
-      _view = 'home';
       indisponivel()
-      auth.signOut();
+      OP_saiu();
+      _view = 'home';
       saveConfig();
+      auth.signOut().then( () => state.carregando=false );
     },
-    vfila(canal: string, id: string, b: boolean)  {
-      var key='vfila/'+canal+'/'+id;
-      if (b)
-        database.ref(key).set(<DbFila>{ts: new Date().getTime()})
-      else 
-        database.ref(key).remove()
-     database.ref('disp/'+id).update({
-       [canal]: b
-     });       
-    },
-    grava_disponibilidade() {
+    vfila() {
       var d=_server_state.disponibilidade;
       if (!d.id) 
         throw new Error('grava_disponibilidade id?')
-      var e=d.id && d.logado && d.enable && (!d.atendendo);
-      _server.vfila('texto', d.id, e && d.can_texto && _canais.texto);
-      _server.vfila('audio', d.id, e && d.can_audio && _canais.audio);
-      _server.vfila('video', d.id, e && d.can_video && _canais.video);        
+      var e=d.id && d.logado && d.enable && (!d.conexao);
       if (d.logado)
-        database.ref('disp/'+d.id).set(<DbDisp>{
-          atendendo: d.atendendo,
+        database.ref('disp/'+d.id).set(<DbFila>{
+          qts: d.logado,
+          sts: new Date().getTime() + 60000,
+          atendendo: d.conexao && d.conexao.idOP || '',
           pausado: !d.enable,
-          texto: _canais.texto,
-          audio: _canais.audio,
-          video: _canais.video,
+          texto: e && d.can_texto && _canais.texto,
+          audio: e && d.can_texto && _canais.audio,
+          video: e && d.can_texto && _canais.video,
         });
       else
         database.ref('disp/'+d.id).remove()       
-    }    
+    },    
+    ofila() {
+      var a=_server_state.atendimento;
+      if (!a.token) 
+        throw new Error('grava_OP token?')
+      var e=a.logado && (!a.conexao);
+      if (a.logado)
+        database.ref('OP/'+a.token).set(<DbFila>{
+          qts: a.logado,
+          sts: new Date().getTime() + 60000,
+          atendendo: a.conexao && a.conexao.idVoluntario || '',
+          pausado: false,
+          texto: e && _canais.texto,
+          audio: e && _canais.audio,
+          video: e && _canais.video,
+        });
+      else
+        database.ref('OP/'+a.token).remove()       
+    },
+    podeAtender() {
+      if (_server_state.proximoV != _server_state.disponibilidade.id) return;
+
+      var l=_server_state.proximosOP;
+      l.sort( (a,b) => a.ts - b.ts);
+      if (l.length)
+        _server_state.disponibilidade.conexao = {
+          idOP: l[0].token,
+          canal: l[0].canal,
+          pendente: new Date().getTime()
+        }
+    },
+    iniciaAtendimento() {
+      if (_server_state.disponibilidade.logado && _server_state.disponibilidade.conexao) {
+        _server_state.disponibilidade.conexao.pendente=0;
+        database.ref('OP/'+_server_state.disponibilidade.conexao.idOP).transaction( (op: any) => {
+          op.atendendo =_server_state.disponibilidade.id;        
+          op.canal =_server_state.disponibilidade.conexao.canal; 
+        })
+        dispatch('changed');    
+      }
+    },
+    terminarAtendimento() {
+      if (_server_state.disponibilidade.logado && _server_state.disponibilidade.conexao) {
+        database.ref('OP/'+_server_state.disponibilidade.conexao.idOP).transaction( (op: any) => {
+          op.atendendo = null;
+          op.canal = null; 
+        })
+        dispatch('changed');    
+      }
+    }
   }
   function events() {
     auth.onAuthStateChanged((user:any)=>{
-      if (user) {
+      if (state.view === 'OP' && user) OP_aguardando(user.uid);
+      else OP_saiu();      
+      if (state.view === 'Voluntario' && user && (!user.isAnonymous)) {
         disponivel(
           user.uid,
           // TODO
@@ -373,40 +449,92 @@ export function configure_server(server: any, changed: () => void): typeof _serv
       s.idleTexto = 0;
       s.idleAudio = 0;
       s.idleVideo = 0;
-      var disp: { [s: string]: DbDisp } = snapshot.val();
-      if (disp)
-        Object.keys(disp).forEach( (id) => {
-          var v = disp[id];
-          s.on++;
-          if (v.texto) s.onTexto++;
-          if (v.audio) s.onAudio++;
-          if (v.video) s.onVideo++;          
-          if (!v.atendendo) {
-            s.idle++;
-            if (v.texto) s.idleTexto++;
-            if (v.audio) s.idleAudio++;
-            if (v.video) s.idleVideo++;
-          } 
-        });
-      dispatch('changed');
+      var disp: { [s: string]: DbFila } = snapshot.val();
+      if (disp) 
+        setTimeout( () => {
+          var vall=Object.keys(disp);
+          vall.sort( (a,b)=> disp[a].qts-disp[b].qts);
+          _server_state.proximoV=null;
+          vall.forEach( (id) => {
+            var v = disp[id];
+            s.on++;
+            if (v.texto) s.onTexto++;
+            if (v.audio) s.onAudio++;
+            if (v.video) s.onVideo++;          
+            if (!v.atendendo) {
+              s.idle++;
+              if (v.audio) s.idleAudio++;
+              if (v.texto) s.idleTexto++;
+              if (v.video) s.idleVideo++;
+              if (!_server_state.proximoV) _server_state.proximoV=id;
+            }             
+          });
+          _server.podeAtender();          
+          dispatch('changed');          
+         },1);
+       else
+        dispatch('changed');
     });    
+    database.ref('OP').on('value', function(snapshot: any) {
+      var s=_server_state.status;
+      var a=_server_state.atendimento;
+      s.filaTexto= 0;
+      s.filaAudio= 0;
+      s.filaVideo= 0;
+      a.fila_texto = 0;
+      a.fila_audio = 0;
+      a.fila_video = 0;
+      var login_ok=false;
+      var disp: { [s: string]: DbFila } = snapshot.val();
+      if (disp) {
+        setTimeout( ()=> {
+          var oall=Object.keys(disp);
+          oall.sort( (a,b)=> disp[a].qts-disp[b].qts);
+          _server_state.proximosOP = [];
+          var p_texto=true, p_audio=true, p_video=true;
+          oall.forEach( (token) => {
+            var o = disp[token];
+            if (o.sts< new Date().getTime()) 
+              setTimeout( ()=> {
+                database.ref('OP/'+token).remove();
+              },1);
+            if (o.texto) {
+              s.filaTexto++;
+              if (p_texto) p_texto=!_server_state.proximosOP.push({canal: 'texto', token, ts: o.qts});
+            }
+            if (o.audio) {
+              s.filaAudio++;
+              if (p_audio) p_audio=!_server_state.proximosOP.push({canal: 'audio', token, ts: o.qts});
+            }
+            if (o.video) {
+              s.filaVideo++;
+              if (p_video) p_video=!_server_state.proximosOP.push({canal: 'video', token, ts: o.qts});
+            }
+            if (token === a.token) {
+              login_ok = true;
+              a.fila_texto = s.filaTexto;
+              a.fila_audio = s.filaAudio;
+              a.fila_video = s.filaVideo;
+            }
+          });
+          _server.podeAtender();
+          dispatch('changed');
+        },1);
+      }
+      else dispatch('changed');
+    });
   }
-
-
-      // filaTexto: 0,
-      // filaAudio: 0,
-      // filaVideo: 0
-
 }
 
 function disponivel(id: string, nome: string, can_texto: boolean, can_audio: boolean, can_video: boolean) {
+  indisponivel();
   var _enable = true, _atendendo=false;
   _server_state.disponibilidade.id = id;
   _server_state.disponibilidade.nome = nome;
-  _server_state.disponibilidade.logado = !!id;
   _carregando = false;
   if (id) {
     _view = 'Voluntario';
+    _server_state.disponibilidade.logado = new Date().getTime();
     Object.defineProperties(_server_state.disponibilidade, {
       enable: {
         get() {
@@ -414,7 +542,7 @@ function disponivel(id: string, nome: string, can_texto: boolean, can_audio: boo
         },
         set(value: boolean) {
           _enable = !!value;
-          _server.grava_disponibilidade();
+          _server.vfila();
         }
       },
       atendendo: {
@@ -423,7 +551,7 @@ function disponivel(id: string, nome: string, can_texto: boolean, can_audio: boo
         },
         set(value: boolean) {
           _atendendo = !!value;
-          _server.grava_disponibilidade();
+          _server.vfila();
         }
       },
       can_texto: {
@@ -443,17 +571,38 @@ function disponivel(id: string, nome: string, can_texto: boolean, can_audio: boo
       },
     });
     saveConfig();
-    _server.grava_disponibilidade();
+    _server.vfila();
   }
-  else indisponivel();
 }
 
 function indisponivel() {
   var d=_server_state.disponibilidade;
-  if (d.enable && d.id) {
-    d.logado=false;
-    _server.grava_disponibilidade();
+  if (d.enable) {
+    d.logado=0;
+    if (d.id)
+      _server.vfila();
     d.id=''
+  }
+  dispatch('changed');
+}
+
+function OP_aguardando(token: string) {
+  OP_saiu();
+  if (token) {
+    _server_state.atendimento.logado = new Date().getTime();
+    _server_state.atendimento.token = token;
+    saveConfig();
+    _server.ofila();
+  }
+}
+
+function OP_saiu() {
+  var a=_server_state.atendimento;
+  if (a.logado) {
+    _server_state.atendimento.logado = 0;
+    if (a.token)
+      _server.ofila();
+    a.token='';
   }
   dispatch('changed');
 }
