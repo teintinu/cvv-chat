@@ -27,7 +27,12 @@ const styles = {
   },
 };
 
-export class OP extends React.Component<{}, {}> {
+export function OP() {
+  if (state.server_state.atendimento.conexao) return <OP_atendimento />
+  return <OP_aguarda />;
+}
+
+export class OP_aguarda extends React.Component<{}, {}> {
   handleOP() {
     state.solicitarAtendimento();
   }
@@ -100,4 +105,8 @@ export class OP extends React.Component<{}, {}> {
         <RaisedButton label="Retornar" onTouchTap={() => state.logout()} />
     </div>;    
   }
+}
+
+function OP_atendimento() {
+  return <div> em atendimento {JSON.stringify(state.server_state.atendimento.conexao)}</div>;
 }

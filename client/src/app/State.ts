@@ -277,7 +277,7 @@ export function configure_server(server: any, changed: () => void): typeof _serv
   var auth = server.auth();
   var database = server.database();
   var storage = server.storage();
-  type DbFila = {qts: number,sts: number,atendendo: string, pausado: boolean, texto: boolean, audio: boolean, video: boolean};
+  type DbFila = {qts: number,sts: number,conexao: {id: string, canal: string}, pausado: boolean, texto: boolean, audio: boolean, video: boolean};
   events();
   return {
     disconnect() {
@@ -364,7 +364,10 @@ export function configure_server(server: any, changed: () => void): typeof _serv
         database.ref('disp/'+d.id).set(<DbFila>{
           qts: d.logado,
           sts: new Date().getTime() + 60000,
-          atendendo: d.conexao && d.conexao.idOP || '',
+          conexao: d.conexao ? {
+            id:  d.conexao.idOP,
+            canal: d.conexao.canal
+          }:null,
           pausado: !d.enable,
           texto: e && d.can_texto && _canais.texto,
           audio: e && d.can_texto && _canais.audio,
@@ -382,7 +385,10 @@ export function configure_server(server: any, changed: () => void): typeof _serv
         database.ref('OP/'+a.token).set(<DbFila>{
           qts: a.logado,
           sts: new Date().getTime() + 60000,
-          atendendo: a.conexao && a.conexao.idVoluntario || '',
+          conexao: a.conexao ? {
+            id:  a.conexao.idVoluntario,
+            canal: a.conexao.canal
+          }:null,
           pausado: false,
           texto: e && _canais.texto,
           audio: e && _canais.audio,
@@ -392,33 +398,30 @@ export function configure_server(server: any, changed: () => void): typeof _serv
         database.ref('OP/'+a.token).remove()       
     },
     podeAtender() {
-      if (_server_state.proximoV != _server_state.disponibilidade.id) return;
-
-      var l=_server_state.proximosOP;
-      l.sort( (a,b) => a.ts - b.ts);
-      if (l.length)
-        _server_state.disponibilidade.conexao = {
-          idOP: l[0].token,
-          canal: l[0].canal,
-          pendente: new Date().getTime()
-        }
+      if (_server_state.disponibilidade.logado && _server_state.proximoV == _server_state.disponibilidade.id) {
+        var l=_server_state.proximosOP;
+        l.sort( (a,b) => a.ts - b.ts);
+        if (l.length)
+          _server_state.disponibilidade.conexao = {
+            idOP: l[0].token,
+            canal: l[0].canal,
+            pendente: new Date().getTime()
+          }
+      }
     },
     iniciaAtendimento() {
       if (_server_state.disponibilidade.logado && _server_state.disponibilidade.conexao) {
         _server_state.disponibilidade.conexao.pendente=0;
-        database.ref('OP/'+_server_state.disponibilidade.conexao.idOP).transaction( (op: any) => {
-          op.atendendo =_server_state.disponibilidade.id;        
-          op.canal =_server_state.disponibilidade.conexao.canal; 
-        })
+        database.ref('OP/'+_server_state.disponibilidade.conexao.idOP+'/conexao').set({
+          id: _server_state.disponibilidade.id,
+          canal: _server_state.disponibilidade.conexao.canal
+        });
         dispatch('changed');    
       }
     },
     terminarAtendimento() {
       if (_server_state.disponibilidade.logado && _server_state.disponibilidade.conexao) {
-        database.ref('OP/'+_server_state.disponibilidade.conexao.idOP).transaction( (op: any) => {
-          op.atendendo = null;
-          op.canal = null; 
-        })
+        database.ref('OP/'+_server_state.disponibilidade.conexao.idOP+'/conexao').set(null)
         dispatch('changed');    
       }
     }
@@ -461,7 +464,7 @@ export function configure_server(server: any, changed: () => void): typeof _serv
             if (v.texto) s.onTexto++;
             if (v.audio) s.onAudio++;
             if (v.video) s.onVideo++;          
-            if (!v.atendendo) {
+            if (!v.conexao) {
               s.idle++;
               if (v.audio) s.idleAudio++;
               if (v.texto) s.idleTexto++;
@@ -484,13 +487,13 @@ export function configure_server(server: any, changed: () => void): typeof _serv
       a.fila_texto = 0;
       a.fila_audio = 0;
       a.fila_video = 0;
-      var login_ok=false;
       var disp: { [s: string]: DbFila } = snapshot.val();
       if (disp) {
         setTimeout( ()=> {
           var oall=Object.keys(disp);
           oall.sort( (a,b)=> disp[a].qts-disp[b].qts);
           _server_state.proximosOP = [];
+          var OP_valido=false;
           var p_texto=true, p_audio=true, p_video=true;
           oall.forEach( (token) => {
             var o = disp[token];
@@ -511,12 +514,24 @@ export function configure_server(server: any, changed: () => void): typeof _serv
               if (p_video) p_video=!_server_state.proximosOP.push({canal: 'video', token, ts: o.qts});
             }
             if (token === a.token) {
-              login_ok = true;
               a.fila_texto = s.filaTexto;
               a.fila_audio = s.filaAudio;
               a.fila_video = s.filaVideo;
+              a.conexao = o.conexao ? {
+                idVoluntario: o.conexao.id,
+                canal: o.conexao.canal
+              } :null;              
+            }            
+            if (o.conexao && _server_state.disponibilidade.logado && _server_state.disponibilidade.id == o.conexao.id) {
+              _server_state.disponibilidade.conexao = {
+                pendente: 0,
+                idOP: token,
+                canal: o.conexao.canal
+              };
             }
+            if (_server_state.disponibilidade.conexao && _server_state.disponibilidade.conexao.idOP == token) OP_valido=true;
           });
+          if (!OP_valido) _server_state.disponibilidade.conexao = null;
           _server.podeAtender();
           dispatch('changed');
         },1);
@@ -684,6 +699,4 @@ export function saveConfig() {
   };
   localStorage.setItem("CVV", JSON.stringify(cfg));
 }
-
-
 
