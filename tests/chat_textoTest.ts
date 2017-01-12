@@ -9,12 +9,32 @@ var cenario=createMatrix({
 describe('chat-texto: Voluntária Ana, OP: Maria e Joao', function() {
 
     it('inicializar cenario', function() {
-      cenario.init();
-      return cenario.ana.login();
+      return cenario.init();
+    });
+    it('init - status', function() {
+      return cenario.ana.checkText('#tableStatus', 
+`Voz Chat Video
+Demanda neste momento
+Em atendimento 0 0 0
+Tamanho da fila 0 0 0
+Disponibilidade neste momento
+Voluntários logados 0 0 0
+Voluntários disponíveis 0 0 0`        
+);
     });
     it('ana aguardando', function() {
-      debugger
-      return cenario.ana.pause(100);
+      return cenario.ana.login();
+    }),
+    it('ana - status', function() {
+      return cenario.ana.checkText('#tableStatus', 
+`Voz Chat Video
+Demanda neste momento
+Em atendimento 0 0 0
+Tamanho da fila 0 0 0
+Disponibilidade neste momento
+Voluntários logados 1 0 0
+Voluntários disponíveis 1 0 0`        
+);
     });
     it('maria chamando', function() {
       return cenario.maria.chamar();

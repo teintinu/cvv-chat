@@ -7,6 +7,7 @@ import { Card, CardActions, CardHeader, CardText } from 'material-ui/Card';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
 import CircularProgress from 'material-ui/CircularProgress';
+import { Status } from './status';
 
 const styles = {
   container: {
@@ -205,49 +206,4 @@ export function VoluntarioAtendimentoVideo() {
     <RaisedButton label="Desligar" tabIndex={2001} primary={true} onTouchTap={() => state.terminarAtendimento()} /> <br />
     {Status()}
   </div>;  
-}
-
-function Status() {
- return <div style={{border: "dotted black 1px", marginTop: "1em"}}>
-    <table width="100%">
-    <tbody>
-      <tr>
-        <th></th>
-        <th>Voz</th>
-        <th>Chat</th>
-        <th>Video</th>
-      </tr>
-      <tr>
-        <th colSpan={4}>Demanda neste momento</th>
-      </tr>
-      <tr>
-        <td>Em atendimento</td>
-        <td>{state.server_state.status.onAudio-state.server_state.status.idleAudio}</td>
-        <td>{state.server_state.status.onTexto-state.server_state.status.idleTexto}</td>
-        <td>{state.server_state.status.onVideo-state.server_state.status.idleVideo}</td>
-      </tr>
-      <tr>
-        <td>Tamanho da fila</td>
-        <td>{state.server_state.status.filaAudio}</td>
-        <td>{state.server_state.status.filaTexto}</td>
-        <td>{state.server_state.status.filaVideo}</td>
-      </tr>
-      <tr>
-        <th colSpan={4}>Disponibilidade neste momento</th>
-      </tr>
-      <tr>
-        <td>Voluntários logados</td>
-        <td>{state.server_state.status.onAudio}</td>
-        <td>{state.server_state.status.onTexto}</td>
-        <td>{state.server_state.status.onVideo}</td>
-      </tr>
-      <tr>
-        <td>Voluntários disponíveis</td>
-        <td>{state.server_state.status.idleAudio}</td>
-        <td>{state.server_state.status.idleTexto}</td>
-        <td>{state.server_state.status.idleVideo}</td>
-      </tr>
-    </tbody>
-  </table>
-  </div>
 }

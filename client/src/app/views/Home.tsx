@@ -8,6 +8,8 @@ import EnhancedButton from 'material-ui/internal/EnhancedButton';
 import {white, green700} from 'material-ui/styles/colors';
 import CircularProgress from 'material-ui/CircularProgress';
 import SvgIcon from 'material-ui/SvgIcon';
+import { Status } from './status';
+
 const styles = {
   container: {
     textAlign: 'center',
@@ -85,6 +87,7 @@ export class Home extends React.Component<{}, {}> {
         style={styles.areaDoVoluntario}
         key="loginVoluntario"          
         onTouchTap={()=>state.loginVoluntario()} />
+      <Status />
     </div>;    
   }
 }

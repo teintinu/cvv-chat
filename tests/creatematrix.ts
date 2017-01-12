@@ -1,7 +1,8 @@
 
 import { remote, RemoteOptions } from 'webdriverio';
+import {expect} from 'chai';
 
-var url: string = 'http://localhost:4000';
+var url: string = 'http://localhost:5000';
 
 export interface AtorsInfo {
   [nome: string]: AtorInfo
@@ -18,7 +19,7 @@ export type AtorInfo = {
 export type Client<W> = WebdriverIO.Client<W> 
 & {
   sincroniza(fn: (browser: Client<W>) => Client<W>): void
-//   checkText(selector: string, expectedText: string): Client<W>
+  checkText(selector: string, expectedText: string): Client<W>
 };
 
 export type MatrixClient<W> = Client<W> &
@@ -93,6 +94,12 @@ export function createMatrix<W, V extends AtorsInfo, O extends AtorsInfo>(
           setSize();
         browser.addCommand('sincroniza', function(fn: (browser: Client<W>)=> void) {
           return _browsers.map( (browser) => fn(browser));
+        });          
+        browser.addCommand('checkText', function(selector: string, expectedText: string) {
+          return browser.getText(selector)
+            .then( (actual) => {
+              expect(actual).to.be.equal(expectedText);
+            });
         });          
         return onInit(browser, nome, info_a);
       }
