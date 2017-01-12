@@ -340,6 +340,17 @@ export function configure_server(server: any, changed: () => void): typeof _serv
         var provider = new server.auth.FacebookAuthProvider();
         p = auth.signInWithPopup(provider);
       }
+      else p = firebase.auth().signInAnonymously().then((user: any) => {
+          if (!user)
+            state.showSnackbar('Credenciais inválidas');
+          disponivel(
+            user.uid,
+            name, 
+            true,
+            true,
+            false
+          )
+        })        
       if (p)
         p.then((res: any) => {
           if (!res.user)
@@ -430,8 +441,8 @@ export function configure_server(server: any, changed: () => void): typeof _serv
     auth.onAuthStateChanged((user:any)=>{
       if (state.view === 'OP' && user) OP_aguardando(user.uid);
       else OP_saiu();      
-      if (state.view === 'Voluntario' && user && (!user.isAnonymous)) {
-        disponivel(
+      if (state.view === 'Voluntario' && user) {
+        if (!user.isAnonymous) disponivel(
           user.uid,
           // TODO
           /([^\s]*)\s.*/g.exec(user.displayName + ' ? ?')[1], 
