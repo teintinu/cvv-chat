@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "target": "es5",
+    "module": "commonjs",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "moduleResolution": "Node",
+    "allowJs": false,
+    "declaration": false,
+    "outDir": "../bin",
+    "rootDir": "./",
+    "tsBuildInfoFile": "../../.cache/ts/client",
+    "importHelpers": true,
+    // "isolatedModules": true,              
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
